@@ -1,14 +1,51 @@
 import vtk 
 import numpy as np
-from scipy.ndimage import binary_erosion
 from vtkmodules.util import numpy_support
-from process import crop_to_nonzero_bbox, detect_local_max
-import random
+from process import detect_local_max
 import os, csv
 from skimage.feature import peak_local_max
 
 class VoxelViewer:
 
+    def find_other_peak_and_propagate_consequent_peaks(self):
+        t = self.current_t
+        vol = self.volumes[t]
+        bounds = self.get_box_bounds(self.other_box_widget)
+        self.other_frame_boxes[t] = bounds
+
+        mask = self.mask_from_bounds(bounds, vol.shape)
+        peak_t = self.compute_target_peak(vol, mask=mask)
+        self.other_target_peaks[t] = peak_t
+
+        O = np.array(self.vtk_img.GetOrigin())
+        S = np.array(self.vtk_img.GetSpacing())
+
+        prev_peak = peak_t
+        for next_t in range(t + 1, self.T):
+            next_vol = self.volumes[next_t]
+            next_mask = self.mask_from_bounds(bounds, next_vol.shape)
+            peak_next = self.compute_target_peak(next_vol, mask=next_mask)
+            if peak_next is None:
+                break
+
+            xmin, xmax, ymin, ymax, zmin, zmax = bounds
+            cx, cy, cz = 0.5 * (xmin + xmax), 0.5 * (ymin + ymax), 0.5 * (zmin + zmax)
+            px = O[0] + (peak_next[2] + 0.5) * S[0]
+            py = O[1] + (peak_next[1] + 0.5) * S[1]
+            dx, dy = px - cx, py - cy
+
+            bounds = [
+                xmin + dx, xmax + dx,
+                ymin + dy, ymax + dy,
+                zmin,      zmax
+            ]
+            self.other_frame_boxes[next_t] = bounds
+            self.other_target_peaks[next_t] = peak_next
+            prev_peak = peak_next
+
+        self.other_box_widget.PlaceWidget(self.other_frame_boxes[t])
+        self.show_other_target_peak(self.other_target_peaks[t])
+        
     def find_local_peak_and_propagate_consequent_peaks(self):
         t = self.current_t
         vol = self.volumes[t]
@@ -65,6 +102,44 @@ class VoxelViewer:
         self.box_widget.PlaceWidget(self.frame_boxes[t])
         self.show_target_peak(self.target_peaks[t])
 
+    def reset_other_selection_box(self):
+        if self.other_box_widget:
+            self.other_box_widget.Off()
+
+        self.other_box_widget = vtk.vtkBoxWidget()
+        self.other_box_widget.SetInteractor(self.render_window_interactor)
+        self.other_box_widget.SetPlaceFactor(1.0)
+        self.other_box_widget.TranslationEnabledOn()
+        self.other_box_widget.RotationEnabledOff()
+        self.other_box_widget.SetHandleSize(0.1)
+        self.other_box_widget.GetOutlineProperty().SetColor(0, 0, 1)  # Blue outline
+        self.other_box_widget.GetOutlineProperty().SetLineWidth(3.0)
+        
+        self.other_box_widget.SetInputData(self.vtk_img)
+        self.other_box_widget.PlaceWidget()
+        dx = -30.0  # adjust this to control how far left you want it
+        dy = 0.0
+        dz = 0.0
+
+        xmin, xmax, ymin, ymax, zmin, zmax = self.get_box_bounds(self.other_box_widget)
+        shifted_bounds = [
+            xmin + dx, xmax + dx,
+            ymin + dy, ymax + dy,
+            zmin + dz, zmax + dz,
+        ]
+        self.other_box_widget.PlaceWidget(shifted_bounds)
+
+
+        self.other_box_widget.On()
+        self.other_box_widget.AddObserver("InteractionEvent", self.on_other_box_interaction)
+
+        self.other_frame_boxes[self.current_t] = self.get_box_bounds(self.other_box_widget)
+        self.render_window.Render()
+
+
+    def on_other_box_interaction(self, obj, event):
+        self.other_frame_boxes[self.current_t] = self.get_box_bounds(obj)
+        
     def reset_selection_box(self):
         self.box_widget.Off()
         # create new widget
@@ -162,91 +237,79 @@ class VoxelViewer:
             volume = self.volumes[t]
             image = self.images[t]
             peak = self.target_peaks[t]
+            other = self.other_target_peaks[t]
             radius = 4  # voxels
             height = self.spacing[2] * 3  # ~3 slices thick
 
             # --- Target mean ---
             target_mean = VoxelViewer.cylinder_mean(image, self.min, peak, radius, volume, only_segmentation=False)
+            other_target_mean = VoxelViewer.cylinder_mean(image, self.min, other, radius, volume, only_segmentation=False)
 
-            # --- Other peaks from MIP ---
-            mip = np.max(volume, axis=0)
-            all_peaks = detect_local_max(mip)
 
-            xmin, xmax, ymin, ymax, zmin, zmax = self.frame_boxes[t]
-            other_peaks = []
-            for y, x in all_peaks:
-                z = np.argmax(volume[:, y, x])
-                wx = self.shift[0] + x * self.spacing[0]
-                wy = self.shift[1] + y * self.spacing[1]
-                wz = self.shift[2] + z * self.spacing[2]
-                # exclude if inside target box
-                if xmin <= wx <= xmax and ymin <= wy <= ymax and zmin <= wz <= zmax:
-                    continue
-                other_peaks.append([z, y, x])
-
-                    # --- Apply logit threshold ---
-            logit_thresh = 0.5
-            filtered_other_means = []
-            filtered_other_peaks = []
-            for p in other_peaks:
-                mean_val = VoxelViewer.cylinder_mean(image, self.min, p, radius, volume, True)
-                # if mean_val >= logit_thresh:  # keep only strong peaks
-                filtered_other_means.append(mean_val)
-                filtered_other_peaks.append(p)
-
-            other_peaks = filtered_other_peaks
-            others_avg = float(np.mean(filtered_other_means)) if filtered_other_means else 0.0
-            new_rows.append([t, target_mean, others_avg])
-
- 
-            print(f"Frame {t}: target={target_mean:.3f}, others={others_avg:.3f}")
+            new_rows.append([t, target_mean, other_target_mean])
+            print(f"Frame {t}: target={target_mean:.3f}, other_target_mean={other_target_mean:.3f}")
             target_means.append(target_mean)
-            other_means.append(others_avg)
+            other_means.append()
             # --- Visualize --- 
-
 
             actors = []
             actors.append(self.add_cylinder(height, radius, peak, (1, 0, 0), opacity=0.4))  # target red
-            for p in other_peaks:
-                actors.append(self.add_cylinder(height, radius, p, (0, 0, 1), opacity=0.2))  # others blue
-
+            actors.append(self.add_cylinder(height, radius, other, (0, 0, 1), opacity=0.4))  # target red
             self.cylinder_actors[t] = actors
 
-         # --- Rewrite CSV properly ---
+        self.update_csv(csv_file, new_rows, t0)
+
+        self.render_window.Render()
+    
+    def update_csv(self, csv_file, new_rows, t0):
+        # --- Rewrite CSV properly ---
         if os.path.exists(csv_file):
             with open(csv_file, newline="") as f:
                 reader = list(csv.reader(f))
-            header, old_rows = reader[:2], reader[2:]
+            # Detect header and data
+            header_line_idx = None
+            for i, row in enumerate(reader):
+                if len(row) >= 2 and row[0] == "time":
+                    header_line_idx = i
+                    break
+            if header_line_idx is not None:
+                header = reader[header_line_idx]
+                old_rows = reader[header_line_idx + 1:]
+            else:
+                header = ["time", "target_mean", "other_target_mean"]
+                old_rows = []
+            # Preserve the first line if it is the special target_volume_pb
+            if reader and reader[0][0] == "target_volume_pb":
+                preserved_first_line = reader[0]
+            else:
+                preserved_first_line = None
         else:
-            header, old_rows = ["time", "target_mean", "others_mean"], []
+            header = ["time", "target_mean", "other_target_mean"]
+            old_rows = []
+            preserved_first_line = None
 
-        # from matplotlib import pyplot as plt
-        # plt.figure()
-        # plt.plot(range(len(target_means)), target_means, c='r')
-        # plt.plot(range(len(target_means)), other_means, c='b')
-        # plt.show()
+        # keep rows < t0
+        kept_rows = [row for row in old_rows if row[0] == 'target_volume_pb' or (row[0].isdigit() and int(row[0]) < t0)]
 
-        # keep rows < t0, replace rows >= t0
-        kept_rows = [row for row in old_rows if row[0] == 'target_volume_pb' or int(row[0]) < t0]
+        # merge with new data
         all_rows = kept_rows + new_rows
-        print(new_rows)
+
+        # write back the file
         with open(csv_file, "w", newline="") as f:
             writer = csv.writer(f)
-            
-            if not self.first_enter:
+            # Write preserved volume line or compute if missing
+            if preserved_first_line:
+                writer.writerow(preserved_first_line)
+            elif not self.first_enter:
                 self.first_enter = True
                 volume_first_target = self.compute_volume_of_target_time_zero()
-                writer.writerow([ "target_volume_pb", volume_first_target, "", "" ])
-            elif old_rows and old_rows[0][0] == "target_volume_pb":
-                writer.writerow(old_rows[0])  # preserve existing first line
-            
+                writer.writerow(["target_volume_pb", volume_first_target, "", ""])
+            # Write header and data
             writer.writerow(header)
             writer.writerows(all_rows)
 
         print(f"CSV updated from frame {t0} onwards → {csv_file}")
 
-        self.render_window.Render()
-        
     def add_key_listener(self):
         def keypress_callback(obj, event):
             key = obj.GetKeySym()
@@ -254,27 +317,59 @@ class VoxelViewer:
             value = slider_rep.GetValue()
             print(f'{key} pressed.')
             # Left / Right arrows move one integer step
-            if key == "Right":
-                new_val = min(value + 1, slider_rep.GetMaximumValue())
-                slider_rep.SetValue(new_val)
-                self.time_slider.InvokeEvent(vtk.vtkCommand.InteractionEvent)
-            elif key == "Left":
-                new_val = max(value - 1, slider_rep.GetMinimumValue())
-                slider_rep.SetValue(new_val)
-                self.time_slider.InvokeEvent(vtk.vtkCommand.InteractionEvent)
-            elif key == "Return":  # Enter key
-                if hasattr(self, "current_selection_voxels"):
-                    self.find_local_peak_and_propagate_consequent_peaks()
+            match key:
+                case "Right":
+                    new_val = min(value + 1, slider_rep.GetMaximumValue())
+                    slider_rep.SetValue(new_val)
+                    self.time_slider.InvokeEvent(vtk.vtkCommand.InteractionEvent)
+                case "Left":
+                    new_val = max(value - 1, slider_rep.GetMinimumValue())
+                    slider_rep.SetValue(new_val)
+                    self.time_slider.InvokeEvent(vtk.vtkCommand.InteractionEvent)
+                case "Return":  # Enter key
+                    if hasattr(self, "current_selection_voxels"):
+                        self.find_local_peak_and_propagate_consequent_peaks()
                     # self.highlight_selection_spheres(radius=10, color=(1,0,0,1))
-            elif key == "r":
-                self.reset_selection_box()
-            elif key == "s":
-                self.show_image = not self.show_image
-                self.update_frame(self.current_t)
-            elif key == 'f':
-                self.compute_averages_and_save_to_csv()
+                case "Return":  # main target
+                    self.find_local_peak_and_propagate_consequent_peaks()
+                case "o":  # blue other target
+                    self.find_other_peak_and_propagate_consequent_peaks()
+                case "R":  # capital R for other box
+                    self.reset_other_selection_box()
+                case "r":
+                    self.reset_selection_box()
+                case "s":
+                    self.show_image = not self.show_image
+                    self.update_frame(self.current_t)
+                case 'f':
+                    self.compute_averages_and_save_to_csv()
 
         self.render_window_interactor.AddObserver("KeyPressEvent", keypress_callback)
+
+    def show_other_target_peak(self, peak_coords, radius=4):
+        if self.other_target_peak_actor:
+            self.renderer.RemoveActor(self.other_target_peak_actor)
+
+        z, y, x = peak_coords
+        spacing = self.spacing
+
+        cube = vtk.vtkCubeSource()
+        cube.SetXLength(spacing[0]*radius)
+        cube.SetYLength(spacing[1]*radius)
+        cube.SetZLength(spacing[2]*radius)
+        cube.SetCenter(x * spacing[0], y * spacing[1], z * spacing[2])
+
+        mapper = vtk.vtkPolyDataMapper()
+        mapper.SetInputConnection(cube.GetOutputPort())
+
+        actor = vtk.vtkActor()
+        actor.SetMapper(mapper)
+        actor.GetProperty().SetColor(0, 0, 1)   # Blue cube
+        actor.GetProperty().SetOpacity(1.0)
+
+        self.renderer.AddActor(actor)
+        self.other_target_peak_actor = actor
+        self.render_window.Render()
 
     def compute_target_peak2(self, volume, mask=None, prev_peak=None,
                         min_distance=2, num_candidates=5,
@@ -408,6 +503,11 @@ class VoxelViewer:
         self.cylinder_actors = {}
         self.target_peaks = {}   # dict: frame index -> (z, y, x)
         self.target_peak_actor = None
+        self.other_target_peaks = {}
+        self.other_frame_boxes = {}
+        self.other_target_peak_actor = None
+        self.other_cylinder_actors = {}
+        self.other_box_widget = None
 
         self.global_min = None
         self.global_max = None
@@ -872,7 +972,8 @@ class VoxelViewer:
                 self.renderer.RemoveActor(a)
         if hasattr(self, "image_actor") and self.image_actor:
             self.renderer.RemoveActor(self.image_actor)
-
+        if t in self.other_target_peaks:
+            self.show_other_target_peak(self.other_target_peaks[t])
         self.peak_actors = []
 
         self.image_actor = None

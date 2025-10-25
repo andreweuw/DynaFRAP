@@ -21,7 +21,7 @@ def fix_filenames(folder, dry_run=True):
     )
 
     for fname in os.listdir(folder):
-        if not fname.endswith(".tif"):
+        if not fname.endswith(".tif") or fname[0] == '.':
             continue
 
         match = pattern.match(fname)

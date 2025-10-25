@@ -1,6 +1,7 @@
 from loader import *
 from process import crop_all, normalize_all, pick_channel
 from viewer import VoxelViewer
+from pathlib import Path
 
 def process_all_from_folders(folder_path, gt_path):
     # volumes, filenames = load_3d_tiff_sequence(folder_path)
@@ -32,29 +33,16 @@ if __name__ == "__main__":
 
 
     # article doesnt have to be before the bigger paper, can be inconporated into the image analysis platform
-    
 
-
-
-
-    # all tifs?
-    to_process = [
-        # "./res/palisade/",
-        "./res/pavement/",
-        # "./res/spongy/,"
-        # './res/guard_1_1/',
-        # './res/guard_1_2/,'
-        './res/guard_full/'
-    ]
-    to_process_im = [
-        # "./flat/WL-Palisade.lif_flattened/",
-        "./flat/WL-Pavement-001.lif_flattened/",
-        # "./flat/WL-Spongy.lif_flattened/,"
-        # "./flat/WL-Guard-1-1-005.lif_flattened/",
-        # "./flat/WL-Guard-1-2.lif_flattened/,"
-        './flat/WL-Guard Full Nucleus.lif_flattened/'
-    ]
-    for f, gt in zip(to_process, to_process_im):
+        
+    res_dir = Path("res")
+    flat_dir = Path("flat")
+    mapping = {}
+    for res_item in res_dir.iterdir():
+        flat_item = flat_dir / res_item.name
+        mapping[str(res_item)] = str(flat_item)
+    for f, gt in mapping.items():
+        print(f'processing {f} with {gt}')
         process_all_from_folders(f, gt)
     # gog("./fin/d/2/", 40)
     
