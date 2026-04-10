@@ -7,56 +7,53 @@ from skimage.feature import peak_local_max
 
 class VoxelViewer:
 
-    def find_other_peak_and_propagate_consequent_peaks(self):
-        t = self.current_t
-        vol = self.volumes[t]
-        bounds = self.get_box_bounds(self.other_box_widget)
-        self.other_frame_boxes[t] = bounds
+    @staticmethod
+    def print_help():
+        """Print keyboard controls help at startup"""
+        print("\n" + "="*60)
+        print("VOXEL VIEWER - KEYBOARD CONTROLS")
+        print("="*60)
+        print("  r         - Reset target box")
+        print("  R         - Reset control box (blue)")
+        print("  Enter     - Find and propagate target peak (red)")
+        print("  o         - Find and propagate control peak (blue)")
+        print("  f         - Compute averages and save to CSV")
+        print("  i         - Toggle image overlay")
+        print("  c         - Clear all cylinder visualizations")
+        print("  Use mouse to rotate, zoom, and pan the view")
+        print("  Use slider to navigate through time frames")
+        print("="*60 + "\n")
 
-        mask = self.mask_from_bounds(bounds, vol.shape)
-        peak_t = self.compute_target_peak(vol, mask=mask)
-        self.other_target_peaks[t] = peak_t
-
-        O = np.array(self.vtk_img.GetOrigin())
-        S = np.array(self.vtk_img.GetSpacing())
-
-        prev_peak = peak_t
-        for next_t in range(t + 1, self.T):
-            next_vol = self.volumes[next_t]
-            next_mask = self.mask_from_bounds(bounds, next_vol.shape)
-            peak_next = self.compute_target_peak(next_vol, mask=next_mask)
-            if peak_next is None:
-                break
-
-            xmin, xmax, ymin, ymax, zmin, zmax = bounds
-            cx, cy, cz = 0.5 * (xmin + xmax), 0.5 * (ymin + ymax), 0.5 * (zmin + zmax)
-            px = O[0] + (peak_next[2] + 0.5) * S[0]
-            py = O[1] + (peak_next[1] + 0.5) * S[1]
-            dx, dy = px - cx, py - cy
-
-            bounds = [
-                xmin + dx, xmax + dx,
-                ymin + dy, ymax + dy,
-                zmin,      zmax
-            ]
-            self.other_frame_boxes[next_t] = bounds
-            self.other_target_peaks[next_t] = peak_next
-            prev_peak = peak_next
-
-        self.other_box_widget.PlaceWidget(self.other_frame_boxes[t])
-        self.show_other_target_peak(self.other_target_peaks[t])
+    def _find_peak_and_propagate(self, peak_type='target'):
+        """
+        Unified function to find and propagate peaks for either target or control.
         
-    def find_local_peak_and_propagate_consequent_peaks(self):
+        Args:
+            peak_type: 'target' for main target peak or 'control' for control peak
+        """
+        # Select appropriate widget and storage based on peak type
+        if peak_type == 'target':
+            box_widget = self.box_widget
+            frame_boxes = self.frame_boxes
+            peaks = self.target_peaks
+            show_peak_func = self.show_target_peak
+        elif peak_type == 'control':
+            box_widget = self.other_box_widget
+            frame_boxes = self.other_frame_boxes
+            peaks = self.other_target_peaks
+            show_peak_func = self.show_other_target_peak
+        else:
+            raise ValueError(f"peak_type must be 'target' or 'control', got '{peak_type}'")
+        
         t = self.current_t
         vol = self.volumes[t]
-        bounds = self.get_box_bounds(self.box_widget)
-        self.frame_boxes[t] = bounds
+        bounds = self.get_box_bounds(box_widget)
+        frame_boxes[t] = bounds
 
         # Peak in current frame (inside current box)
         mask = self.mask_from_bounds(bounds, vol.shape)
-        prev_peak = self.target_peaks[t - 1] if t - 1 in self.target_peaks else None
         peak_t = self.compute_target_peak(vol, mask=mask)
-        self.target_peaks[t] = peak_t
+        peaks[t] = peak_t
         
         # ---- Propagate forward ----
         O = np.array(self.vtk_img.GetOrigin())
@@ -70,7 +67,6 @@ class VoxelViewer:
             next_mask = self.mask_from_bounds(bounds, next_vol.shape)
             
             peak_next = self.compute_target_peak(next_vol, mask=next_mask)
-            # peak_next = self.compute_target_peak2(next_vol, mask=next_mask, prev_peak=prev_peak)
 
             if peak_next is None:  # e.g. empty mask
                 break
@@ -82,7 +78,6 @@ class VoxelViewer:
             # Peak center in world coords
             px = O[0] + (peak_next[2] + 0.5) * S[0]
             py = O[1] + (peak_next[1] + 0.5) * S[1]
-            # keep cz as-is
 
             dx, dy = px - cx, py - cy
 
@@ -94,13 +89,13 @@ class VoxelViewer:
             ]
 
             # Store for this frame
-            self.frame_boxes[next_t] = bounds
-            self.target_peaks[next_t] = peak_next
+            frame_boxes[next_t] = bounds
+            peaks[next_t] = peak_next
             prev_peak = peak_next
 
         # Refresh the current box + peak
-        self.box_widget.PlaceWidget(self.frame_boxes[t])
-        self.show_target_peak(self.target_peaks[t])
+        box_widget.PlaceWidget(frame_boxes[t])
+        show_peak_func(peaks[t])
 
     def reset_other_selection_box(self):
         if self.other_box_widget:
@@ -117,19 +112,6 @@ class VoxelViewer:
         
         self.other_box_widget.SetInputData(self.vtk_img)
         self.other_box_widget.PlaceWidget()
-        dx = -30.0  # adjust this to control how far left you want it
-        dy = 0.0
-        dz = 0.0
-
-        xmin, xmax, ymin, ymax, zmin, zmax = self.get_box_bounds(self.other_box_widget)
-        shifted_bounds = [
-            xmin + dx, xmax + dx,
-            ymin + dy, ymax + dy,
-            zmin + dz, zmax + dz,
-        ]
-        self.other_box_widget.PlaceWidget(shifted_bounds)
-
-
         self.other_box_widget.On()
         self.other_box_widget.AddObserver("InteractionEvent", self.on_other_box_interaction)
 
@@ -154,12 +136,38 @@ class VoxelViewer:
         self.box_widget.SetInputData(self.vtk_img)
         self.box_widget.PlaceWidget()
         self.box_widget.On()
-        self.box_widget.AddObserver("InteractionEvent", self.on_box_interaction)
+        self.box_widget.AddObserver("InteractionEvent", self.on_box_end_interaction)
 
         # store/update frame box if needed
         self.frame_boxes[self.current_t] = self.get_box_bounds(self.box_widget)
 
         self.render_window.Render()
+
+    def _place_box_widget_split(self, widget, full_bounds, side='left', gap_fraction=0.05):
+        """
+        Place a box widget on either left or right half of the volume with a gap.
+        
+        Args:
+            widget: vtkBoxWidget to position
+            full_bounds: tuple (xmin, xmax, ymin, ymax, zmin, zmax) of full volume
+            side: 'left' or 'right' 
+            gap_fraction: fraction of width to use as gap between boxes (default 5%)
+        """
+        xmin, xmax, ymin, ymax, zmin, zmax = full_bounds
+        x_width = xmax - xmin
+        gap = x_width * gap_fraction / 2  # half gap on each side
+        x_center = (xmin + xmax) / 2
+        
+        if side == 'left':
+            # Left half: from xmin to center, minus gap
+            bounds = (xmin, x_center - gap, ymin, ymax, zmin, zmax)
+        elif side == 'right':
+            # Right half: from center to xmax, minus gap
+            bounds = (x_center + gap, xmax, ymin, ymax, zmin, zmax)
+        else:
+            raise ValueError(f"side must be 'left' or 'right', got '{side}'")
+        
+        widget.PlaceWidget(*bounds)
 
     # --- draw cylinders ---
     def add_cylinder(self, height, radius, center, color, opacity=0.3):
@@ -331,9 +339,10 @@ class VoxelViewer:
                         self.find_local_peak_and_propagate_consequent_peaks()
                     # self.highlight_selection_spheres(radius=10, color=(1,0,0,1))
                 case "Return":  # main target
-                    self.find_local_peak_and_propagate_consequent_peaks()
+                    self._find_peak_and_propagate(peak_type='target')
                 case "o":  # blue other target
-                    self.find_other_peak_and_propagate_consequent_peaks()
+                    
+                    self._find_peak_and_propagate(peak_type='control')
                 case "R":  # capital R for other box
                     self.reset_other_selection_box()
                 case "r":
@@ -502,12 +511,12 @@ class VoxelViewer:
         self.frame_boxes = {} 
         self.cylinder_actors = {}
         self.target_peaks = {}   # dict: frame index -> (z, y, x)
+        self.box_widgets_initialized = False  # Track if box widgets have been set up
         self.target_peak_actor = None
         self.other_target_peaks = {}
         self.other_frame_boxes = {}
         self.other_target_peak_actor = None
         self.other_cylinder_actors = {}
-        self.other_box_widget = None
 
         self.global_min = None
         self.global_max = None
@@ -538,6 +547,15 @@ class VoxelViewer:
         self.box_widget.RotationEnabledOff()
         self.box_widget.SetHandleSize(0.005)
 
+        self.other_box_widget = vtk.vtkBoxWidget()
+        self.other_box_widget.SetInteractor(self.render_window_interactor)
+        self.other_box_widget.SetPlaceFactor(1.0)
+        self.other_box_widget.TranslationEnabledOn()
+        self.other_box_widget.RotationEnabledOff()
+        self.other_box_widget.SetHandleSize(0.005)
+        self.other_box_widget.GetOutlineProperty().SetColor(0, 0, 1)  # Blue outline for control
+        self.other_box_widget.GetOutlineProperty().SetLineWidth(3.0)
+
         # Text actor
         self.text_actor = vtk.vtkTextActor()
         self.text_actor.GetTextProperty().SetFontSize(25)
@@ -561,6 +579,9 @@ class VoxelViewer:
         self.vtk_img = None 
         # Draw first frame
         self.update_frame(self.current_t)
+        
+        # Print help controls
+        self.print_help()
 
     def compute_volume_of_target_time_zero(self):
         """
@@ -878,11 +899,29 @@ class VoxelViewer:
         vtk_array = numpy_support.numpy_to_vtk(volume.ravel(order='F'), deep=True)
         self.vtk_img.GetPointData().SetScalars(vtk_array)
 
-        # configure box widget to operate on the image bounds
-        self.box_widget.SetInputData(self.vtk_img)
-        self.box_widget.PlaceWidget()
-        self.box_widget.On()
-        self.box_widget.AddObserver("EndInteractionEvent", self.on_box_end_interaction)
+        # Only initialize box widgets once with split placement
+        if not self.box_widgets_initialized:
+            # Get full image bounds
+            bounds = self.vtk_img.GetBounds()  # (xmin, xmax, ymin, ymax, zmin, zmax)
+            
+            # configure box widget to operate on the image bounds
+            self.box_widget.SetInputData(self.vtk_img)
+            # Place target box on LEFT half (with small gap)
+            self._place_box_widget_split(self.box_widget, bounds, side='left')
+            self.box_widget.On()
+            self.box_widget.AddObserver("EndInteractionEvent", self.on_box_end_interaction)
+            
+            self.other_box_widget.SetInputData(self.vtk_img)
+            # Place control box on RIGHT half (with small gap)
+            self._place_box_widget_split(self.other_box_widget, bounds, side='right')
+            self.other_box_widget.On()
+            self.other_box_widget.AddObserver("EndInteractionEvent", self.on_other_box_interaction)
+            
+            self.box_widgets_initialized = True
+        else:
+            # Just update the input data without resetting placement
+            self.box_widget.SetInputData(self.vtk_img)
+            self.other_box_widget.SetInputData(self.vtk_img)
         # Actor
         actor = vtk.vtkActor()
         actor.SetMapper(glyph_mapper)
@@ -1013,8 +1052,24 @@ class VoxelViewer:
             bounds = self.frame_boxes[t]
             self.box_widget.PlaceWidget(bounds)
         else:
-            # first time this frame → place normally
-            self.box_widget.PlaceWidget()
+            # first time this frame → place with left split
+            if self.vtk_img:
+                bounds = self.vtk_img.GetBounds()
+                self._place_box_widget_split(self.box_widget, bounds, side='left')
+            else:
+                self.box_widget.PlaceWidget()
+
+        # Handle other_box_widget similarly
+        if t in self.other_frame_boxes:
+            other_bounds = self.other_frame_boxes[t]
+            self.other_box_widget.PlaceWidget(other_bounds)
+        else:
+            # first time this frame → place with right split
+            if self.vtk_img:
+                bounds = self.vtk_img.GetBounds()
+                self._place_box_widget_split(self.other_box_widget, bounds, side='right')
+            else:
+                self.other_box_widget.PlaceWidget()
 
         if hasattr(self, "cylinder_actors") and t in self.cylinder_actors:
             for a in self.cylinder_actors[t]:

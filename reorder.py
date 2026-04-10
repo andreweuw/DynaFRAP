@@ -50,4 +50,4 @@ def fix_filenames(folder, dry_run=True):
 bases = ['res/', 'flat/']
 for base in bases:
     for folder in os.listdir(base):
-        fix_filenames(base+folder, dry_run=False)  # set dry_run=False to actually rename
+        fix_filenames(base+folder, dry_run=True)  # set dry_run=False to actually rename
