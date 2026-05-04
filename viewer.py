@@ -18,7 +18,7 @@ class VoxelViewer:
         print("  Enter     - Find and propagate target peak (red)")
         print("  o         - Find and propagate control peak (blue)")
         print("  f         - Compute averages and save to CSV")
-        print("  i         - Toggle image overlay")
+        print("  i         - Toggle image-only view")
         print("  c         - Clear all cylinder visualizations")
         print("  Use mouse to rotate, zoom, and pan the view")
         print("  Use slider to navigate through time frames")
@@ -347,7 +347,7 @@ class VoxelViewer:
                     self.reset_other_selection_box()
                 case "r":
                     self.reset_selection_box()
-                case "s":
+                case "i":
                     self.show_image = not self.show_image
                     self.update_frame(self.current_t)
                 case 'f':
@@ -780,7 +780,7 @@ class VoxelViewer:
 
     def add_image_volume(self, vol_data):
         """
-        Add raw microscopy volume (Z, Y, X) with transparency.
+        Add raw microscopy volume (Z, Y, X) as a grayscale intensity rendering.
         """
 
         # Ensure float32
@@ -793,17 +793,24 @@ class VoxelViewer:
         img = vtk.vtkImageData()
         img.SetDimensions(vol_data.shape[2], vol_data.shape[1], vol_data.shape[0])
         img.GetPointData().SetScalars(vtk_data)
-        # img.SetSpacing(*self.spacing) 
+        img.SetSpacing(*self.spacing)
 
-        # Transparency (opacity mapping)
+        # Robust windowing improves visibility even with outliers.
+        p1, p99 = np.percentile(vol_data, [1, 99])
+        if p99 <= p1:
+            p1 = float(np.min(vol_data))
+            p99 = float(np.max(vol_data))
+
+        # Opacity mapping for image-only rendering.
         alpha = vtk.vtkPiecewiseFunction()
-        alpha.AddPoint(np.min(vol_data), 0.0)   # fully transparent background
-        alpha.AddPoint(np.max(vol_data), 0.2)   # 20% opacity foreground
+        alpha.AddPoint(p1, 0.0)
+        alpha.AddPoint((p1 + p99) * 0.5, 0.25)
+        alpha.AddPoint(p99, 0.9)
 
         # Grayscale color transfer
         color = vtk.vtkColorTransferFunction()
-        color.AddRGBPoint(np.min(vol_data), 1.0, 1.0, 1.0)
-        color.AddRGBPoint(np.max(vol_data), 1.0, 1.0, 1.0)
+        color.AddRGBPoint(p1, 0.0, 0.0, 0.0)
+        color.AddRGBPoint(p99, 1.0, 1.0, 1.0)
 
         vol_prop = vtk.vtkVolumeProperty()
         vol_prop.SetColor(color)
@@ -1022,30 +1029,39 @@ class VoxelViewer:
                 for a in self.cylinder_actors[self.current_t]:
                     self.renderer.RemoveActor(a)
 
-        # Get the selected channel volume (logits)
+        # Get frame data
         volume = self.volumes[t]   # shape (Z, Y, X)
         image_volume = self.images[t]
-        if np.any(volume):
-            # Render with cubes colored by logits
-            self.current_actor = self.add_logits_as_cubes(volume)
-            self.peak_actors = self.add_peaks_mip(volume, radius=4.0)
-        else:
-            self.current_actor = None
-        
 
         if self.show_image and np.any(image_volume):
+            # Image-only mode: do not overlay logits.
+            self.current_actor = None
             self.image_actor = self.add_image_volume(image_volume)
+        else:
+            if np.any(volume):
+                # Logits mode
+                self.current_actor = self.add_logits_as_cubes(volume)
+                self.peak_actors = self.add_peaks_mip(volume, radius=4.0)
+            else:
+                self.current_actor = None
             
         self.text_actor.SetInput(
             f"{self.filenames[t]}"
         )
 
-        if t not in self.target_peaks:
-            peak = self.compute_target_peak(volume)
-            self.target_peaks[t] = peak
+        if not self.show_image:
+            if t not in self.target_peaks:
+                peak = self.compute_target_peak(volume)
+                self.target_peaks[t] = peak
 
-        # Show it
-        self.show_target_peak(self.target_peaks[t])
+            # Show target marker only in logits mode.
+            self.show_target_peak(self.target_peaks[t])
+        elif self.target_peak_actor:
+            self.renderer.RemoveActor(self.target_peak_actor)
+            self.target_peak_actor = None
+        if self.show_image and self.other_target_peak_actor:
+            self.renderer.RemoveActor(self.other_target_peak_actor)
+            self.other_target_peak_actor = None
 
         self.current_t = t
         if t in self.frame_boxes:

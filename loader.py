@@ -6,20 +6,24 @@ import numpy as np
 
 def fix_filenames(folder, dry_run=True):
     """
-    Fix filenames according to rules:
-    - If "Pre" is in the filename:
-        * Increase series number by +1
-        * Reset time number to 0
-    - Otherwise keep unchanged.
+    Fix filenames so Pre snapshots align with their Pb1 series.
+
+    Rules:
+    - If a Pre file has a matching Pb1 file (same prefix/channel),
+      copy the Pb1 series index and set Pre time to 0.
+    - If no Pb1 match is found, fall back to legacy behavior:
+      Pre + Time_1 -> Series+1 and Time_0.
+    - Other files are unchanged.
 
     Args:
         folder (str): Path to folder with files
         dry_run (bool): If True, only print changes. If False, rename files.
     """
     pattern = re.compile(
-        r"(.*Series)(\d+)(_Channel_\d+_Time_)(\d+)(\.tif)$"
+        r"^(?P<prefix>.*?)(?P<label>Pre|Pb1)\s+Series(?P<series>\d+)(?P<middle>_Channel_(?P<channel>\d+)_Time_)(?P<time>\d+)(?P<ext>\.tif)$"
     )
 
+    parsed = []
     for fname in os.listdir(folder):
         if not fname.endswith(".tif") or fname[0] == '.':
             continue
@@ -28,20 +32,55 @@ def fix_filenames(folder, dry_run=True):
         if not match:
             print(f"Skipping: {fname}")
             continue
+        parsed.append((fname, match))
 
-        prefix, series, middle, time, ext = match.groups()
-        series, time = int(series), int(time)
+    pb1_by_key = {}
+    for fname, match in parsed:
+        gd = match.groupdict()
+        if gd["label"] != "Pb1":
+            continue
+        key = (gd["prefix"].rstrip(" _-"), gd["channel"])
+        pb1_by_key.setdefault(key, []).append((fname, int(gd["series"])))
 
-        if "Pre" in fname and "Time_1" in fname:
+    for fname, match in parsed:
+        gd = match.groupdict()
+        if gd["label"] != "Pre":
+            continue
+
+        series = int(gd["series"])
+        time = int(gd["time"])
+        key = (gd["prefix"].rstrip(" _-"), gd["channel"])
+
+        new_series = None
+        new_time = None
+
+        pb1_candidates = pb1_by_key.get(key, [])
+        if len(pb1_candidates) == 1:
+            new_series = pb1_candidates[0][1]
+            new_time = 0
+        elif len(pb1_candidates) > 1:
+            # If duplicates exist, choose the closest series index.
+            closest = min(pb1_candidates, key=lambda x: abs(x[1] - series))
+            new_series = closest[1]
+            new_time = 0
+        elif time == 1:
+            # Legacy fallback for old one-step offset naming.
+            print('Warning: No Pb1 match for {}, applying legacy fix.'.format(fname))
             new_series = series + 1
             new_time = 0
         else:
             continue
 
-        new_fname = f"{prefix}{new_series}{middle}{new_time}{ext}"
+        if series == new_series and time == new_time:
+            continue
 
+        new_fname = f"{gd['prefix']}Pre Series{new_series}{gd['middle']}{new_time}{gd['ext']}"
         old_path = os.path.join(folder, fname)
         new_path = os.path.join(folder, new_fname)
+
+        if os.path.exists(new_path) and old_path != new_path:
+            print(f"Skipping (target exists): {fname}  -->  {new_fname}")
+            continue
 
         if dry_run:
             print(f"{fname}  -->  {new_fname}")
@@ -59,10 +98,16 @@ def normalize_prefix(prefix: str) -> str:
     tokens = [t for t in tokens if t and t not in bad_tokens]
     return "_".join(tokens) if tokens else ""
 
-def load_dual_3d_tiff_sequence(folder_logits, folder_images):
+def load_dual_3d_tiff_sequence(folder_logits, folder_images, pb1_max_frame=None):
     """
     Load paired 3D TIFF volumes: logits + raw images.
     Filenames must match between the two folders.
+    Args:
+        folder_logits (str): Path to logits TIFFs.
+        folder_images (str): Path to raw image TIFFs.
+        pb1_max_frame (int | None): If set, only load Pb1 frames with
+            Time_ <= pb1_max_frame. Pre frames are kept.
+
     Returns:
         all_logits, all_images, all_filenames
     where each entry is (T, C, Z, Y, X).
@@ -85,6 +130,8 @@ def load_dual_3d_tiff_sequence(folder_logits, folder_images):
             prefix = normalize_prefix(raw_prefix)
             series_idx = int(match.group(2))
             time_idx = int(match.group(3))
+            if pb1_max_frame is not None and " Pb1 " in fname and time_idx > pb1_max_frame:
+                continue
             file_entries.append((prefix, series_idx, time_idx, fname))
         else:
             print(f"Skipping: {fname}")
@@ -136,7 +183,15 @@ def load_dual_3d_tiff_sequence(folder_logits, folder_images):
 
     return all_logits, all_images, all_filenames
 
-def load_3d_tiff_sequence(folder_path):
+def load_3d_tiff_sequence(folder_path, pb1_max_frame=None):
+    """
+    Load 3D TIFF series grouped by (normalized prefix, series).
+
+    Args:
+        folder_path (str): Path to TIFF folder.
+        pb1_max_frame (int | None): If set, only load Pb1 frames with
+            Time_ <= pb1_max_frame. Pre frames are kept.
+    """
     fix_filenames(folder_path, dry_run=False)
     pattern = re.compile(r"(.+?)Series(\d+)_Channel_\d+_Time_(\d+)\.tif$")
 
@@ -150,6 +205,8 @@ def load_3d_tiff_sequence(folder_path):
             prefix = normalize_prefix(raw_prefix)
             series_idx = int(match.group(2))
             time_idx = int(match.group(3))
+            if pb1_max_frame is not None and " Pb1 " in fname and time_idx > pb1_max_frame:
+                continue
             file_entries.append((prefix, series_idx, time_idx, fname))
         else:
             print(f"Skipping: {fname}")

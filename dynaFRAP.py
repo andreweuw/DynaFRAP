@@ -3,9 +3,13 @@ from process import crop_all, normalize_all, pick_channel
 from viewer import VoxelViewer
 from pathlib import Path
 
-def process_all_from_folders(folder_path, gt_path):
+def process_all_from_folders(folder_path, gt_path, pb1_max_frame=None):
     # volumes, filenames = load_3d_tiff_sequence(folder_path)
-    volumes, images, filenames = load_dual_3d_tiff_sequence(folder_path, gt_path)
+    volumes, images, filenames = load_dual_3d_tiff_sequence(
+        folder_path,
+        gt_path,
+        pb1_max_frame=pb1_max_frame,
+    )
     for volume, filename, images in zip(volumes, filenames, images):
         print(volume.shape)
         bbox, _ = compute_global_bounding_box(volume)
