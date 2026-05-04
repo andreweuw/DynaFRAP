@@ -1,6 +1,6 @@
 from loader import *
 from process import crop_all, normalize_all, pick_channel
-from viewer import VoxelViewer
+from viewer.voxel_viewer import VoxelViewer
 from pathlib import Path
 
 def process_all_from_folders(folder_path, gt_path, pb1_max_frame=None):
@@ -22,7 +22,7 @@ def process_all_from_folders(folder_path, gt_path, pb1_max_frame=None):
 
 if __name__ == "__main__":
     # Do we know how many one palisade cell can have?
-    # can some appear and some others vanish?
+    # can some appear and some controls vanish?
 
     # inspect
 

@@ -7,7 +7,7 @@ def fix_filenames(folder, dry_run=True):
     - If "Pre" is in the filename:
         * Increase series number by +1
         * Reset time number to 0
-    - Otherwise keep unchanged.
+    - controlwise keep unchanged.
 
     Args:
         folder (str): Path to folder with files

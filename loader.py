@@ -13,7 +13,7 @@ def fix_filenames(folder, dry_run=True):
       copy the Pb1 series index and set Pre time to 0.
     - If no Pb1 match is found, fall back to legacy behavior:
       Pre + Time_1 -> Series+1 and Time_0.
-    - Other files are unchanged.
+    - control files are unchanged.
 
     Args:
         folder (str): Path to folder with files
