@@ -54,6 +54,12 @@ def compute_averages_and_save_to_csv(viewer):
 
         print(f"Frame {t}: target_mean={target_mean:.3f}, target_mean_likelihood={target_mean_likelihood:.3f}, "
               f"control_mean={control_mean:.3f}, control_mean_likelihood={control_mean_likelihood:.3f}")
+        if np.isnan(target_mean) or np.isnan(target_mean_likelihood):
+            print(f"Warning: target mean or likelihood is NaN for frame {t}. This may indicate an issue with the selected peak or the underlying data.")
+            exit(1) 
+        if np.isnan(control_mean) or np.isnan(control_mean_likelihood):
+            print(f"Warning: control mean or likelihood is NaN for frame {t}. This may indicate an issue with the selected peak or the underlying data.")
+            exit(1) 
 
         new_rows.append([
             t,
@@ -67,6 +73,7 @@ def compute_averages_and_save_to_csv(viewer):
             height if control is not None else "",
             target_mean_likelihood,
             control_mean_likelihood if control is not None else "",
+            f"[{image.shape[0]},{image.shape[1]},{image.shape[2]}]",
         ])
         print(f"Frame {t}: target={target_mean:.3f}, control_mean={control_mean:.3f}")
 
@@ -95,6 +102,7 @@ def update_csv(viewer, csv_file, new_rows, t0):
         "control_height",
         "target_mean_likelihood",
         "control_mean_likelihood",
+        "image_shape[z=depth,y,x]",
     ]
     row_width = len(header)
 

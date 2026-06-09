@@ -1,6 +1,7 @@
 import os
 import re
 
+
 def fix_filenames(folder, dry_run=True):
     """
     Fix filenames according to rules:
@@ -13,9 +14,7 @@ def fix_filenames(folder, dry_run=True):
         folder (str): Path to folder with files
         dry_run (bool): If True, only print changes. If False, rename files.
     """
-    pattern = re.compile(
-        r"(.*Series)(\d+)(_Channel_\d+_Time_)(\d+)(\.tif)$"
-    )
+    pattern = re.compile(r"(.*Series)(\d+)(_Channel_\d+_Time_)(\d+)(\.tif)$")
 
     for fname in os.listdir(folder):
         if not fname.endswith(".tif"):
@@ -47,7 +46,7 @@ def fix_filenames(folder, dry_run=True):
 
 
 # Example usage:
-bases = ['res/', 'flat/']
+bases = ["res/", "flat/"]
 for base in bases:
     for folder in os.listdir(base):
-        fix_filenames(base+folder, dry_run=True)  # set dry_run=False to actually rename
+        fix_filenames(base + folder, dry_run=True)  # set dry_run=False to actually rename

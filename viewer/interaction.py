@@ -102,9 +102,6 @@ def add_key_listener(viewer):
         value = slider_rep.GetValue()
         print(f"{key} pressed.")
         
-        # Cancel default VTK key press behavior
-        obj.ForceAbortCallback()
-        
         match key:
             case "Right":
                 new_val = min(value + 1, slider_rep.GetMaximumValue())

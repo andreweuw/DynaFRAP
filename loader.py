@@ -1,7 +1,8 @@
 import os
 import re
-from tifffile import imread
+
 import numpy as np
+from tifffile import imread
 
 
 def fix_filenames(folder, dry_run=True):
@@ -25,7 +26,7 @@ def fix_filenames(folder, dry_run=True):
 
     parsed = []
     for fname in os.listdir(folder):
-        if not fname.endswith(".tif") or fname[0] == '.':
+        if not fname.endswith(".tif") or fname[0] == ".":
             continue
 
         match = pattern.match(fname)
@@ -65,7 +66,7 @@ def fix_filenames(folder, dry_run=True):
             new_time = 0
         elif time == 1:
             # Legacy fallback for old one-step offset naming.
-            print('Warning: No Pb1 match for {}, applying legacy fix.'.format(fname))
+            print(f"Warning: No Pb1 match for {fname}, applying legacy fix.")
             new_series = series + 1
             new_time = 0
         else:
@@ -87,6 +88,7 @@ def fix_filenames(folder, dry_run=True):
         else:
             os.rename(old_path, new_path)
 
+
 def normalize_prefix(prefix: str) -> str:
     """
     Normalize prefix by stripping ignorable tags like 'Pre' or 'Pb'
@@ -97,6 +99,7 @@ def normalize_prefix(prefix: str) -> str:
     tokens = re.split(r"[\s_\-]+", prefix)
     tokens = [t for t in tokens if t and t not in bad_tokens]
     return "_".join(tokens) if tokens else ""
+
 
 def load_dual_3d_tiff_sequence(folder_logits, folder_images, pb1_max_frame=None):
     """
@@ -114,9 +117,6 @@ def load_dual_3d_tiff_sequence(folder_logits, folder_images, pb1_max_frame=None)
     """
     fix_filenames(folder_logits, dry_run=False)
     fix_filenames(folder_images, dry_run=False)
-    import os, re
-    import numpy as np
-    from tifffile import imread
 
     pattern = re.compile(r"(.+?)Series(\d+)_Channel_\d+_Time_(\d+)\.tif$")
 
@@ -141,17 +141,21 @@ def load_dual_3d_tiff_sequence(folder_logits, folder_images, pb1_max_frame=None)
 
     # group by (prefix, series)
     series_map = {}
-    for prefix, series, time, fname in file_entries:
+    for prefix, series, _, fname in file_entries:
         series_map.setdefault((prefix, series), []).append(fname)
 
     all_logits = []
     all_images = []
     all_filenames = []
-
-    for (prefix, series) in sorted(series_map.keys()):
+    skipping = True
+    for prefix, series in sorted(series_map.keys()):
         fnames = series_map[(prefix, series)]
-
+        if "_WL-Spongy - Spongy Mesophyll-FRAP 006_FRAP Pre Series41_Channel_1" in fnames[0]:
+            skipping = False
+        if skipping:
+            continue
         logits_vols, image_vols = [], []
+
         for f in fnames:
             # load logits
             v1 = imread(os.path.join(folder_logits, f))
@@ -164,7 +168,7 @@ def load_dual_3d_tiff_sequence(folder_logits, folder_images, pb1_max_frame=None)
             # load matching raw image
             f_img = os.path.join(folder_images, f)
             if not os.path.exists(f_img):
-                f_img = os.path.join(folder_images, f.replace('Series', 'Series0'))
+                f_img = os.path.join(folder_images, f.replace("Series", "Series0"))
                 if not os.path.exists(f_img):
                     raise FileNotFoundError(f"Missing raw image: {f_img}")
             v2 = imread(f_img)
@@ -175,13 +179,14 @@ def load_dual_3d_tiff_sequence(folder_logits, folder_images, pb1_max_frame=None)
             image_vols.append(v2)
 
         logits_vols = np.stack(logits_vols, axis=0)  # (T, C, Z, Y, X)
-        image_vols = np.stack(image_vols, axis=0)    # (T, Z, Y, X)
+        image_vols = np.stack(image_vols, axis=0)  # (T, Z, Y, X)
 
         all_logits.append(logits_vols)
         all_images.append(image_vols)
         all_filenames.append(fnames)
 
     return all_logits, all_images, all_filenames
+
 
 def load_3d_tiff_sequence(folder_path, pb1_max_frame=None):
     """
@@ -201,7 +206,7 @@ def load_3d_tiff_sequence(folder_path, pb1_max_frame=None):
             continue
         match = pattern.search(fname)
         if match:
-            raw_prefix = match.group(1) # text before 'Series'
+            raw_prefix = match.group(1)  # text before 'Series'
             prefix = normalize_prefix(raw_prefix)
             series_idx = int(match.group(2))
             time_idx = int(match.group(3))
@@ -222,7 +227,7 @@ def load_3d_tiff_sequence(folder_path, pb1_max_frame=None):
     all_volumes = []
     all_filenames = []
 
-    for (prefix, series) in sorted(series_map.keys()):
+    for prefix, series in sorted(series_map.keys()):
         fnames = series_map[(prefix, series)]
         volumes = []
         for f in fnames:
@@ -239,23 +244,6 @@ def load_3d_tiff_sequence(folder_path, pb1_max_frame=None):
     return all_volumes, all_filenames
 
 
-    files = []
-
-    for fname in os.listdir(folder_path):
-        match = pattern.search(fname)
-        print(match, fname)
-        if match:
-            time_idx = int(match.group(1))
-            files.append((time_idx, fname))
-
-    files.sort(key=lambda x: (x[0], x[1]))
-    filenames = [fname for _, fname in files]
-    volumes = [imread(os.path.join(folder_path, fname)) for fname in filenames]
-
-    # now volumes is a list of arrays of shape (C, Z, Y, X)
-    volumes = np.stack(volumes)  # (T, C, Z, Y, X)
-    return volumes, filenames
-
 def compute_global_bounding_box(volumes, channel=0):
     T, C, Z, Y, X = volumes.shape
     min_z, min_y, min_x = Z, Y, X
@@ -271,7 +259,8 @@ def compute_global_bounding_box(volumes, channel=0):
         min_z, min_y, min_x = min(min_z, z0), min(min_y, y0), min(min_x, x0)
         max_z, max_y, max_x = max(max_z, z1), max(max_y, y1), max(max_x, x1)
     bbox = slice(min_z, max_z + 1), slice(min_y, max_y + 1), slice(min_x, max_x + 1)
-    return bbox, np.array([min_z,min_y,min_x])
+    return bbox, np.array([min_z, min_y, min_x])
+
 
 def crop_volumes_to_bounding_box(volumes, bbox):
     z_slice, y_slice, x_slice = bbox
