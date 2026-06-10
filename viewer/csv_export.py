@@ -1,6 +1,7 @@
 import csv
-from math import nan
 import os
+from math import nan
+
 import numpy as np
 
 from . import analysis
@@ -9,7 +10,7 @@ from .primitives import add_cylinder
 
 def compute_averages_and_save_to_csv(viewer):
     s = viewer.filenames[0]
-    csv_file = f"{s[:s.find('_Time')]}.csv"
+    csv_file = f"{s[: s.find('_Time')]}.csv"
     start_t = viewer.current_t
     t0 = viewer.current_t
     new_rows = []
@@ -32,49 +33,56 @@ def compute_averages_and_save_to_csv(viewer):
         control = viewer.control_peaks.get(t)
         control_center = control if control is not None else ("", "", "")
 
-
-
-        import numpy as np
-        zc, yc, xc = peak
-        print("DEBUG center (peak):", peak)
-        print("DEBUG shift (viewer.min):", viewer.min)
-        print("DEBUG shapes: image", image.shape, "volume", volume.shape)
+        # zc, yc, xc = peak
+        # print("DEBUG center (peak):", peak)
+        # print("DEBUG shift (viewer.min):", viewer.min)
+        # print("DEBUG shapes: image", image.shape, "volume", volume.shape)
         # build same mask _mean_of_cylinder uses (center is z,y,x)
-        zz, yy, xx = np.indices(volume.shape)
-        half_h = int(height) // 2
-        zmin = max(0, zc - half_h)
-        zmax = min(volume.shape[0], zc + half_h + 1)
-        dist2d = np.sqrt((yy - yc) ** 2 + (xx - xc) ** 2)
-        mask = (dist2d <= radius) & (zz >= zmin) & (zz < zmax)
-        vals = volume[mask]
-        print("DEBUG mask voxels:", mask.sum(), "vals dtype:", vals.dtype, "nan count:", np.isnan(vals).sum(), "sample:", vals.ravel()[:10])
+        # zz, yy, xx = np.indices(volume.shape)
+        # half_h = int(height) // 2
+        # zmin = max(0, zc - half_h)
+        # zmax = min(volume.shape[0], zc + half_h + 1)
+        # dist2d = np.sqrt((yy - yc) ** 2 + (xx - xc) ** 2)
+        # mask = (dist2d <= radius) & (zz >= zmin) & (zz < zmax)
+        # vals = volume[mask]
+        # print("DEBUG mask voxels:", mask.sum(), "vals dtype:", vals.dtype, "nan count:", np.isnan(vals).sum(), "sample:", vals.ravel()[:10])
 
-        target_mean, target_mean_likelihood = analysis.cylinder_mean(image, viewer.min, peak, radius, volume, height)
-        control_mean, control_mean_likelihood = analysis.cylinder_mean(image, viewer.min, control, radius, volume, height) if control is not None else (nan, nan)
+        target_mean, target_mean_likelihood = analysis.cylinder_mean(
+            image, viewer.min, peak, radius, volume, height
+        )
+        control_mean, control_mean_likelihood = (
+            analysis.cylinder_mean(image, viewer.min, control, radius, volume, height)
+            if control is not None
+            else (nan, nan)
+        )
 
-        print(f"Frame {t}: target_mean={target_mean:.3f}, target_mean_likelihood={target_mean_likelihood:.3f}, "
-              f"control_mean={control_mean:.3f}, control_mean_likelihood={control_mean_likelihood:.3f}")
-        if np.isnan(target_mean) or np.isnan(target_mean_likelihood):
-            print(f"Warning: target mean or likelihood is NaN for frame {t}. This may indicate an issue with the selected peak or the underlying data.")
-            exit(1) 
-        if np.isnan(control_mean) or np.isnan(control_mean_likelihood):
-            print(f"Warning: control mean or likelihood is NaN for frame {t}. This may indicate an issue with the selected peak or the underlying data.")
-            exit(1) 
+        # print(f"Frame {t}: target_mean={target_mean:.3f}, target_mean_likelihood={target_mean_likelihood:.3f}, "
+        #       f"control_mean={control_mean:.3f}, control_mean_likelihood={control_mean_likelihood:.3f}")
+        # if np.isnan(target_mean) or np.isnan(target_mean_likelihood):
+        #     print(f"Warning: target mean or likelihood is NaN for frame {t}. This may indicate an issue with the selected peak or the underlying data.")
+        #     exit(1)
+        # if np.isnan(control_mean) or np.isnan(control_mean_likelihood):
+        #     print(f"Warning: control mean or likelihood is NaN for frame {t}. This may indicate an issue with the selected peak or the underlying data.")
+        #     exit(1)
 
-        new_rows.append([
-            t,
-            target_mean,
-            control_mean,
-            f"[{peak[0]},{peak[1]},{peak[2]}]",
-            radius,
-            height,
-            f"[{control_center[0]},{control_center[1]},{control_center[2]}]" if control is not None else "",
-            radius if control is not None else "",
-            height if control is not None else "",
-            target_mean_likelihood,
-            control_mean_likelihood if control is not None else "",
-            f"[{image.shape[0]},{image.shape[1]},{image.shape[2]}]",
-        ])
+        new_rows.append(
+            [
+                t,
+                target_mean,
+                control_mean,
+                f"[{peak[0]},{peak[1]},{peak[2]}]",
+                radius,
+                height,
+                f"[{control_center[0]},{control_center[1]},{control_center[2]}]"
+                if control is not None
+                else "",
+                radius if control is not None else "",
+                height if control is not None else "",
+                target_mean_likelihood,
+                control_mean_likelihood if control is not None else "",
+                f"[{image.shape[0]},{image.shape[1]},{image.shape[2]}]",
+            ]
+        )
         print(f"Frame {t}: target={target_mean:.3f}, control_mean={control_mean:.3f}")
 
         actors = []
@@ -132,9 +140,11 @@ def update_csv(viewer, csv_file, new_rows, t0):
 
         existing_header = reader[header_line_idx]
         if existing_header != header:
-            raise RuntimeError("CSV header mismatch — runtime mismatch detected. Aborting to avoid corrupting existing data.")
+            raise RuntimeError(
+                "CSV header mismatch — runtime mismatch detected. Aborting to avoid corrupting existing data."
+            )
 
-        existing_rows = reader[header_line_idx + 1:]
+        existing_rows = reader[header_line_idx + 1 :]
         # populate buffer with existing rows (preserve previous values)
         for i in range(min(len(existing_rows), T)):
             rows[i] = pad_row(existing_rows[i])

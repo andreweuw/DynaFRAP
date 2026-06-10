@@ -36,7 +36,9 @@ def reset_control_selection_box(viewer):
     viewer.control_box_widget.SetInputData(viewer.vtk_img)
     viewer.control_box_widget.PlaceWidget()
     viewer.control_box_widget.On()
-    viewer.control_box_widget.AddObserver("InteractionEvent", lambda obj, event: on_control_box_interaction(viewer, obj, event))
+    viewer.control_box_widget.AddObserver(
+        "InteractionEvent", lambda obj, event: on_control_box_interaction(viewer, obj, event)
+    )
 
     viewer.control_frame_boxes[viewer.current_t] = viewer.get_box_bounds(viewer.control_box_widget)
     viewer.render_window.Render()
@@ -58,7 +60,9 @@ def reset_selection_box(viewer):
     viewer.box_widget.SetInputData(viewer.vtk_img)
     viewer.box_widget.PlaceWidget()
     viewer.box_widget.On()
-    viewer.box_widget.AddObserver("InteractionEvent", lambda obj, event: on_box_end_interaction(viewer, obj, event))
+    viewer.box_widget.AddObserver(
+        "InteractionEvent", lambda obj, event: on_box_end_interaction(viewer, obj, event)
+    )
 
     viewer.frame_boxes[viewer.current_t] = viewer.get_box_bounds(viewer.box_widget)
     viewer.render_window.Render()
@@ -101,7 +105,7 @@ def add_key_listener(viewer):
         slider_rep = viewer.time_slider.GetRepresentation()
         value = slider_rep.GetValue()
         print(f"{key} pressed.")
-        
+
         match key:
             case "Right":
                 new_val = min(value + 1, slider_rep.GetMaximumValue())
@@ -112,7 +116,10 @@ def add_key_listener(viewer):
                 slider_rep.SetValue(new_val)
                 viewer.time_slider.InvokeEvent(vtk.vtkCommand.InteractionEvent)
             case "Return":
+                viewer._estimate_radius_at_frame_zero()
                 viewer._find_peak_and_propagate(peak_type="target")
+                viewer._find_peak_and_propagate(peak_type="control")
+                csv_export.compute_averages_and_save_to_csv(viewer)
             case "o":
                 viewer._find_peak_and_propagate(peak_type="control")
             case "u":
