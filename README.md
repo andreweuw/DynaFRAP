@@ -44,16 +44,9 @@ The typical DynaFRAP workflow consists of two stages:
    - Derive quantitative recovery features such as recovery half-time, mobile fraction, and immobile fraction.
 
 A detailed description of the postprocessing pipeline is available in:
+- [Postprocessing overview](docs/postprocessing_overview.pdf)
+- [Postprocessing documentation](docs/postprocessing.pdf)
 
-```text
-docs/postprocessing_overview.pdf
-````
-
-and
-
-```text
-docs/postprocessing.pdf
-```
 
 ---
 
@@ -87,11 +80,7 @@ DynaFRAP also provides a postprocessing module for analyzing the generated inten
 
 Before running postprocessing, configure the analysis parameters in:
 
-```text
-src/dynafrap_andreweuw/post_analysis/config.py
-```
-
-Typical configuration options include input/output paths, normalization mode, fitting parameters, plotting settings, and column names.
+[`src/dynafrap_andreweuw/post_analysis/config.py`](src/dynafrap_andreweuw/post_analysis/config.py)
 
 Run postprocessing with:
 
