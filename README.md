@@ -125,20 +125,16 @@ For the full mathematical description, see the postprocessing documentation in t
 
 DynaFRAP uses the following core technologies:
 
-* **Biom3D** / **nnUNet** for segmentation or log-likelihood generation.
-* **VTK** for visualization, interaction, and 3D region handling.
-* **NumPy** and **pandas** for numerical and tabular data processing.
-* **SciPy** for recovery-curve fitting.
-* **scikit-image** for related scientific Python tools for image processing.
+- [Biom3D](https://biom3d.readthedocs.io) / nnUNet for segmentation or log-likelihood generation.
+- [VTK](https://vtk.org/) for visualization, interaction, and 3D region handling.
+- [NumPy](https://numpy.org/) and [pandas](https://pandas.pydata.org/) for numerical and tabular data processing.
+- [SciPy](https://scipy.org/) for recovery-curve fitting.
+- [scikit-image](https://scikit-image.org/) for image processing.
 
 ---
 
 
 ## Citation / Acknowledgements
 
-This project uses Biom3D for segmentation-related outputs. See the Biom3D documentation:
-
-```text
-https://biom3d.readthedocs.io
-```
+This project uses [Biom3D](https://biom3d.readthedocs.io) for segmentation-related outputs.
 
