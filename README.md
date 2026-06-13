@@ -1,4 +1,3 @@
-````markdown
 # DynaFRAP
 
 **DynaFRAP** is an interactive tool for semi-automatic analysis of dynamic FRAP experiments in live photobodies.
@@ -154,5 +153,3 @@ This project uses Biom3D for segmentation-related outputs. See the Biom3D docume
 https://biom3d.readthedocs.io
 ```
 
-```
-```
