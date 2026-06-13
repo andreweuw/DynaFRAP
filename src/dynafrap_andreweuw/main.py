@@ -4,7 +4,7 @@ from dynafrap_andreweuw.loader import (
     load_dual_3d_tiff_sequence,
 )
 from dynafrap_andreweuw.process import crop_all
-from dynafrap_andreweuw.viewer.voxel_viewer import VoxelViewer
+from dynafrap_andreweuw.interactive_viewer.voxel_viewer import VoxelViewer
 
 
 def process_all_from_folders(folder_path, gt_path, pb1_max_frame=None):

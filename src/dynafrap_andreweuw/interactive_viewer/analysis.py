@@ -8,7 +8,7 @@ def compute_target_peak(volume, mask=None):
     return np.unravel_index(flat_idx, volume.shape)
 
 
-def compute_target_peak2(
+def compute_target_peak_heuristic(
     volume,
     mask=None,
     prev_peak=None,
