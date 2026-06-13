@@ -26,6 +26,10 @@ dependencies = [
     "vtk>=9.5.0",
 ]
 
+[project.urls]
+Homepage = "https://github.com/andreweuw/LiveCellTracker"
+Issues = "https://github.com/andreweuw/LiveCellTracker/issues"
+
 [project.scripts]
 dynafrap = "dynafrap_andreweuw.main:main"
 dynafrap-postprocess = "dynafrap_andreweuw.post_analysis.main:main"
