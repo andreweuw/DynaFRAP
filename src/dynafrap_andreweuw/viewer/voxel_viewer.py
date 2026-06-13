@@ -2,7 +2,7 @@ import numpy as np
 import vtk
 from vtkmodules.util import numpy_support
 
-from process import detect_local_max
+from dynafrap_andreweuw.process import detect_local_max
 
 from . import analysis, interaction
 from .analysis import propagate_peak_bounds
@@ -153,7 +153,7 @@ class VoxelViewer:
 
         image = self.images[t]
 
-        peak_t, best_radius, best_likelihood = analysis.estimate_radius_at_frame_zero(
+        peak_t, best_radius, _ = analysis.estimate_radius_at_frame_zero(
             vol, image, bounds, vol.shape, self.spacing, self.shift
         )
 
@@ -196,9 +196,9 @@ class VoxelViewer:
         self.render_window.Render()
 
     def world_to_voxel(self, x, y, z):
-        i = int(round((z - self.shift[2]) / self.spacing[2]))
-        j = int(round((y - self.shift[1]) / self.spacing[1]))
-        k = int(round((x - self.shift[0]) / self.spacing[0]))
+        i = round((z - self.shift[2]) / self.spacing[2])
+        j = round((y - self.shift[1]) / self.spacing[1])
+        k = round((x - self.shift[0]) / self.spacing[0])
         i = np.clip(i, 0, self.Z - 1)
         j = np.clip(j, 0, self.Y - 1)
         k = np.clip(k, 0, self.X - 1)

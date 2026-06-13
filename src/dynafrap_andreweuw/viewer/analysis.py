@@ -156,9 +156,7 @@ def estimate_radius_at_frame_zero(volume, image, bounds, shape, spacing, shift):
     best_likelihood = 0.0
 
     for test_radius in np.linspace(radius_min, radius_max, 40):
-        intensity_mean, likelihood_mean = cylinder_mean(
-            image, shift, peak_t, test_radius, volume, height
-        )
+        _, likelihood_mean = cylinder_mean(image, shift, peak_t, test_radius, volume, height)
 
         if np.isnan(likelihood_mean):
             continue

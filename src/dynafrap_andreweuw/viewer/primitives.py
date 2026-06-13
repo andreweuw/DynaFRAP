@@ -33,6 +33,7 @@ def add_cylinder(viewer, height, radius, center, color, opacity=0.3):
     actor.GetProperty().SetOpacity(opacity)
     return actor
 
+
 def rebuild_lut(viewer):
     if viewer.values is None or viewer.current_lut is None:
         return
@@ -50,12 +51,17 @@ def rebuild_lut(viewer):
     for i in range(256):
         v = viewer.vmin + (i / 255.0) * (viewer.vmax - viewer.vmin)
         r, g, b = ctf.GetColor(v)
-        alpha = 0.0 if v < viewer.vmin or v > viewer.vmax else (v - viewer.vmin) / (viewer.vmax - viewer.vmin)
+        alpha = (
+            0.0
+            if v < viewer.vmin or v > viewer.vmax
+            else (v - viewer.vmin) / (viewer.vmax - viewer.vmin)
+        )
         lut.SetTableValue(i, r, g, b, alpha)
 
     viewer.current_lut.DeepCopy(lut)
     viewer.render_window.Render()
-    
+
+
 def make_slider(min_val, max_val, x1, y1, x2, y2, callback, is_int=False):
     slider_rep = vtk.vtkSliderRepresentation2D()
     slider_rep.SetMinimumValue(min_val)
@@ -74,10 +80,10 @@ def make_slider(min_val, max_val, x1, y1, x2, y2, callback, is_int=False):
     slider_widget = vtk.vtkSliderWidget()
     slider_widget.SetRepresentation(slider_rep)
 
-    def on_slider(obj, event):
+    def on_slider(obj, event):  # noqa: ARG001
         val = obj.GetRepresentation().GetValue()
         if is_int:
-            val = int(round(val))
+            val = round(val)
             obj.GetRepresentation().SetValue(val)
         callback(val)
 

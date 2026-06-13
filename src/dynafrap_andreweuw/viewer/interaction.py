@@ -44,7 +44,7 @@ def reset_control_selection_box(viewer):
     viewer.render_window.Render()
 
 
-def on_control_box_interaction(viewer, obj, event):
+def on_control_box_interaction(viewer, obj, event):  # noqa: ARG001
     viewer.control_frame_boxes[viewer.current_t] = viewer.get_box_bounds(obj)
 
 
@@ -84,7 +84,7 @@ def place_box_widget_split(widget, full_bounds, side="left", gap_fraction=0.05):
     widget.PlaceWidget(*bounds)
 
 
-def on_box_end_interaction(viewer, obj, event):
+def on_box_end_interaction(viewer, obj, event):  # noqa: ARG001
     planes = vtk.vtkPlanes()
     obj.GetPlanes(planes)
     extract = vtk.vtkExtractGeometry()
@@ -100,7 +100,7 @@ def on_box_end_interaction(viewer, obj, event):
 
 
 def add_key_listener(viewer):
-    def keypress_callback(obj, event):
+    def keypress_callback(obj, event):  # noqa: ARG001
         key = obj.GetKeySym()
         slider_rep = viewer.time_slider.GetRepresentation()
         value = slider_rep.GetValue()
