@@ -5,6 +5,8 @@
 from pathlib import Path
 
 INPUT_FOLDER = Path("data/output/measurements/pavement_lr_hr")
+FIT_RESULTS_CSV = Path("data/output/fit_results.csv")
+SAVE_FIT_RESULTS = True
 
 GROUP_NAMES = [
     "Low-red",
@@ -60,5 +62,3 @@ INDIVIDUAL_LINE_WIDTH = 1.0
 MEAN_LINE_WIDTH = 2.5
 FIT_LINE_WIDTH = 2.5
 
-SAVE_FIT_RESULTS = True
-FIT_RESULTS_CSV = Path("fit_results.csv")
