@@ -44,16 +44,9 @@ The typical DynaFRAP workflow consists of two stages:
    - Derive quantitative recovery features such as recovery half-time, mobile fraction, and immobile fraction.
 
 A detailed description of the postprocessing pipeline is available in:
+- [Postprocessing overview](docs/postprocessing_overview.pdf)
+- [Postprocessing documentation](docs/postprocessing.pdf)
 
-```text
-docs/postprocessing_overview.pdf
-````
-
-and
-
-```text
-docs/postprocessing.pdf
-```
 
 ---
 
@@ -87,11 +80,7 @@ DynaFRAP also provides a postprocessing module for analyzing the generated inten
 
 Before running postprocessing, configure the analysis parameters in:
 
-```text
-src/dynafrap_andreweuw/post_analysis/config.py
-```
-
-Typical configuration options include input/output paths, normalization mode, fitting parameters, plotting settings, and column names.
+[`src/dynafrap_andreweuw/post_analysis/config.py`](src/dynafrap_andreweuw/post_analysis/config.py)
 
 Run postprocessing with:
 
@@ -136,20 +125,16 @@ For the full mathematical description, see the postprocessing documentation in t
 
 DynaFRAP uses the following core technologies:
 
-* **Biom3D** / **nnUNet** for segmentation or log-likelihood generation.
-* **VTK** for visualization, interaction, and 3D region handling.
-* **NumPy** and **pandas** for numerical and tabular data processing.
-* **SciPy** for recovery-curve fitting.
-* **scikit-image** for related scientific Python tools for image processing.
+- [Biom3D](https://biom3d.readthedocs.io) / nnUNet for segmentation or log-likelihood generation.
+- [VTK](https://vtk.org/) for visualization, interaction, and 3D region handling.
+- [NumPy](https://numpy.org/) and [pandas](https://pandas.pydata.org/) for numerical and tabular data processing.
+- [SciPy](https://scipy.org/) for recovery-curve fitting.
+- [scikit-image](https://scikit-image.org/) for image processing.
 
 ---
 
 
 ## Citation / Acknowledgements
 
-This project uses Biom3D for segmentation-related outputs. See the Biom3D documentation:
-
-```text
-https://biom3d.readthedocs.io
-```
+This project uses [Biom3D](https://biom3d.readthedocs.io) for segmentation-related outputs.
 
