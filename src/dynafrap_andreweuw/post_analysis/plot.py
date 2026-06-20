@@ -16,17 +16,18 @@ from dynafrap_andreweuw.post_analysis.config import (
     INDIVIDUAL_LINE_ALPHA,
     INDIVIDUAL_LINE_WIDTH,
     MEAN_LINE_WIDTH,
-    NORMALIZATION_MODE,
     SHOW_CI,
     SHOW_HALFTIME_MARKER,
     SHOW_INDIVIDUAL_TRACES,
     SOURCE_FILE_COL,
     TIME_COL,
+    X_LABEL,
+    Y_LABEL,
+    TITLE,
 )
 from dynafrap_andreweuw.post_analysis.process import (
     fit_group_mean,
-    get_y_col_from_normalization_mode,
-    get_y_label,
+    get_y_col,
 )
 
 
@@ -58,7 +59,7 @@ def plot_groups_combined(all_results, y_col=None):
         - t_1/2 marker
     """
     if y_col is None:
-        y_col = get_y_col_from_normalization_mode()
+        y_col = get_y_col()
 
     plt.figure(figsize=FIGSIZE)
 
@@ -101,9 +102,9 @@ def plot_groups_combined(all_results, y_col=None):
 
             fit_results.append(fit_result)
 
-    plt.xlabel("Time")
-    plt.ylabel(get_y_label(y_col))
-    plt.title(f"FRAP recovery by group ({NORMALIZATION_MODE})")
+    plt.xlabel(X_LABEL)
+    plt.ylabel(Y_LABEL)
+    plt.title(TITLE)
     plt.grid(True)
     plt.legend()
     plt.tight_layout()

@@ -11,7 +11,7 @@ from dynafrap_andreweuw.post_analysis.config import (
 from dynafrap_andreweuw.post_analysis.plot import plot_groups_combined
 from dynafrap_andreweuw.post_analysis.process import (
     correct_target,
-    get_y_col_from_normalization_mode,
+    get_y_col,
 )
 
 
@@ -73,7 +73,7 @@ def load_and_process_all(grouped_files):
 # =============================================================================
 
 def main():
-    y_col = get_y_col_from_normalization_mode()
+    y_col = get_y_col()
 
     grouped_files = collect_group_files(
         input_folder=INPUT_FOLDER,

@@ -115,7 +115,8 @@ def fit_recovery_curve(time_values, intensity_values):
     """
     x = np.asarray(time_values, dtype=float)
     y = np.asarray(intensity_values, dtype=float)
-
+    print(x)
+    print(y)
     valid = np.isfinite(x) & np.isfinite(y)
     x = x[valid]
     y = y[valid]
