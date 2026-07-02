@@ -32,9 +32,9 @@ GROUPS_FOLDER = Path("data/output/measurements")
 # all of these folders are pooled together into a single combined run
 # (one plot, one fit results CSV).
 INPUT_FOLDER_NAMES = [
-    "pavement_lr_hr", # Combine these two to get joined groups under same regexes
-    "guard_dark_lr_hr",  # Combine these two to get joined groups under same regexes
-    # "wl",
+    # "pavement_lr_hr", # Combine these two to get joined groups under same regexes
+    # "guard_dark_lr_hr",  # Combine these two to get joined groups under same regexes
+    "wl",
 ]
 
 INPUT_FOLDERS = [GROUPS_FOLDER / name for name in INPUT_FOLDER_NAMES]
@@ -85,10 +85,12 @@ class Group:
 # number of groups; name/pattern/color are independent so the display name
 # can be descriptive without constraining the filename-matching regex.
 GROUPS = [
-    Group(name="Low-red", pattern=r"low-red", color="tab:blue"),
-    Group(name="High-Red", pattern=r"high-red", color="tab:red"),
-    Group(name="WL-guard", pattern=r"wl-guard", color="tab:blue"),
-    Group(name="WL-pavement", pattern=r"wl-pavement", color="tab:red"),
+    Group(name="Low-red", pattern=r"low-red", color="blue"),
+    Group(name="High-Red", pattern=r"high-red", color="red"),
+    Group(name="WL-guard", pattern=r"wl-guard", color="blue"),
+    Group(name="WL-pavement", pattern=r"wl-pavement", color="green"),
+    Group(name="WL-palisade", pattern=r"wl-palisade", color="magenta"),
+    Group(name="WL-spongy", pattern=r"wl-spongy", color="black"),
 ]
 
 
@@ -127,11 +129,12 @@ CONTROL_BLEACH_FACTOR_OUTLIER_THRESHOLD = 0.1
 # If False, any file containing outlier frames is excluded entirely from the
 # group mean/CI/fit. Its full raw trace can still be drawn separately
 # instead of silently disappearing (see PLOT_OUTLIERS).
-CORRECT_OUTLIER = False
+# ... Could be also truncated since its usually the last frames.
+CORRECT_OUTLIER = True
 
 # If True (and CORRECT_OUTLIER is False), draw the full raw trace of each
 # excluded file, clearly labeled, so the excluded data stays visible.
-PLOT_OUTLIERS = False
+PLOT_OUTLIERS = True
 
 
 # -----------------------------------------------------------------------------
