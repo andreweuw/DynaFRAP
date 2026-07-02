@@ -2,8 +2,11 @@ import numpy as np
 
 from dynafrap_andreweuw.post_analysis.config import (
     CONTROL_BLEACH_FACTOR_COL,
+    CONTROL_BLEACH_FACTOR_OUTLIER_THRESHOLD,
     CONTROL_COL,
+    CORRECT_OUTLIER,
     CORRECTED_TARGET_RECOVERY_PERCENT_COL,
+    IS_OUTLIER_COL,
     I_PRE_COL,
     MIN_PLOT_TIME,
     PREBLEACH_TIME,
@@ -124,13 +127,59 @@ def correct_target(df):
         ) * 100.0
 
     df[CONTROL_BLEACH_FACTOR_COL] = control_bleach_factor
+    df[IS_OUTLIER_COL] = control_bleach_factor < CONTROL_BLEACH_FACTOR_OUTLIER_THRESHOLD
     df[I_PRE_COL] = I_pre
     df[CORRECTED_TARGET_RECOVERY_PERCENT_COL] = target_corrected_recovery_percent
 
     return df[df[TIME_COL] >= MIN_PLOT_TIME].copy()
 
 
-def fit_group_mean(summary, group_df, group_name, y_col):
+def resolve_outliers(group_df, y_col):
+    """
+    Apply outlier handling to one group's combined dataframe.
+
+    A file is considered an outlier file if any of its frames were flagged
+    in IS_OUTLIER_COL (control channel collapsed, corrected intensity
+    unreliable).
+
+    If CORRECT_OUTLIER is True, outlier frames are inpainted with the
+    group's per-timepoint mean computed from non-outlier frames, and the
+    file is kept in the returned stats dataframe.
+
+    If CORRECT_OUTLIER is False, outlier files are removed entirely from
+    the stats dataframe and returned separately so callers can still plot
+    their raw trace.
+
+    Returns:
+        stats_df: dataframe to use for the group mean/CI/fit.
+        excluded_df: outlier-file rows to plot separately (empty unless
+            CORRECT_OUTLIER is False).
+        n_outliers: number of distinct files that had at least one outlier
+            frame, regardless of CORRECT_OUTLIER.
+    """
+    outlier_files = group_df.loc[group_df[IS_OUTLIER_COL], SOURCE_FILE_COL].unique()
+    n_outliers = len(outlier_files)
+
+    if CORRECT_OUTLIER:
+        clean_df = group_df[~group_df[IS_OUTLIER_COL]]
+
+        if clean_df.empty:
+            return group_df, group_df.iloc[0:0], n_outliers
+
+        clean_means = clean_df.groupby(TIME_COL)[y_col].mean()
+
+        stats_df = group_df.copy()
+        outlier_mask = stats_df[IS_OUTLIER_COL]
+        stats_df.loc[outlier_mask, y_col] = stats_df.loc[outlier_mask, TIME_COL].map(clean_means)
+
+        return stats_df, group_df.iloc[0:0], n_outliers
+
+    is_outlier_file = group_df[SOURCE_FILE_COL].isin(outlier_files)
+
+    return group_df[~is_outlier_file], group_df[is_outlier_file], n_outliers
+
+
+def fit_group_mean(summary, group_df, group_name, y_col, n_outliers=0):
     """
     Fit one-phase exponential recovery to the group mean curve.
 
@@ -169,6 +218,7 @@ def fit_group_mean(summary, group_df, group_name, y_col):
         "mobile_fraction": mobile_fraction,
         "immobile_fraction": immobile_fraction,
         "n_files": group_df[SOURCE_FILE_COL].nunique(),
+        "n_outliers": n_outliers,
     }
 
     return fit_result, fit_curve

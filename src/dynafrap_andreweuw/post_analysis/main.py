@@ -1,12 +1,14 @@
+import re
+
 import pandas as pd
 
 from dynafrap_andreweuw.post_analysis.config import (
-    FIT_RESULTS_CSV,
     GROUP_COL,
-    GROUP_NAMES,
-    INPUT_FOLDER,
+    GROUPS,
+    INPUT_FOLDERS,
     SAVE_FIT_RESULTS,
     SOURCE_FILE_COL,
+    fit_results_csv,
 )
 from dynafrap_andreweuw.post_analysis.plot import plot_groups_combined
 from dynafrap_andreweuw.post_analysis.process import (
@@ -15,18 +17,23 @@ from dynafrap_andreweuw.post_analysis.process import (
 )
 
 
-def collect_group_files(input_folder, group_names):
+def collect_group_files(input_folders, groups):
     """
-    Collect CSV files into groups based on filename matching.
+    Collect CSV files from all input folders into groups based on
+    filename regex matching.
     """
-    grouped_files = {group: [] for group in group_names}
+    grouped_files = {group.name: [] for group in groups}
 
-    csv_files = list(input_folder.glob("*.csv"))
+    csv_files = [
+        csv_file
+        for input_folder in input_folders
+        for csv_file in input_folder.glob("*.csv")
+    ]
 
     for csv_file in csv_files:
-        for group in group_names:
-            if group.lower() in csv_file.name.lower():
-                grouped_files[group].append(csv_file)
+        for group in groups:
+            if re.search(group.pattern, csv_file.name, re.IGNORECASE):
+                grouped_files[group.name].append(csv_file)
 
     return grouped_files
 
@@ -63,7 +70,7 @@ def load_and_process_all(grouped_files):
             all_results.append(df)
 
     if len(all_results) == 0:
-        raise RuntimeError("No CSV files were processed. Check INPUT_FOLDER and GROUP_NAMES.")
+        raise RuntimeError("No CSV files were processed. Check INPUT_FOLDERS and GROUPS.")
 
     return pd.concat(all_results, ignore_index=True)
 
@@ -76,8 +83,8 @@ def main():
     y_col = get_y_col()
 
     grouped_files = collect_group_files(
-        input_folder=INPUT_FOLDER,
-        group_names=GROUP_NAMES,
+        input_folders=INPUT_FOLDERS,
+        groups=GROUPS,
     )
 
     print("Grouped files:")
@@ -97,8 +104,9 @@ def main():
     print(fit_results_df)
 
     if SAVE_FIT_RESULTS:
-        fit_results_df.to_csv(FIT_RESULTS_CSV, index=False)
-        print(f"\nSaved fit results to: {FIT_RESULTS_CSV}")
+        csv_path = fit_results_csv()
+        fit_results_df.to_csv(csv_path, index=False)
+        print(f"\nSaved fit results to: {csv_path}")
 
 if __name__ == "__main__":
     main()

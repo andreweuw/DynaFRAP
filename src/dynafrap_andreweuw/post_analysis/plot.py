@@ -11,11 +11,11 @@ from dynafrap_andreweuw.post_analysis.config import (
     FIGSIZE,
     FIT_LINE_WIDTH,
     GROUP_COL,
-    GROUP_COLORS,
-    GROUP_NAMES,
+    GROUPS,
     INDIVIDUAL_LINE_ALPHA,
     INDIVIDUAL_LINE_WIDTH,
     MEAN_LINE_WIDTH,
+    PLOT_OUTLIERS,
     SHOW_CI,
     SHOW_HALFTIME_MARKER,
     SHOW_INDIVIDUAL_TRACES,
@@ -28,6 +28,7 @@ from dynafrap_andreweuw.post_analysis.config import (
 from dynafrap_andreweuw.post_analysis.process import (
     fit_group_mean,
     get_y_col,
+    resolve_outliers,
 )
 
 
@@ -65,25 +66,35 @@ def plot_groups_combined(all_results, y_col=None):
 
     fit_results = []
 
-    for group_name in GROUP_NAMES:
+    for group in GROUPS:
+        group_name = group.name
         group_df = all_results[all_results[GROUP_COL] == group_name].copy()
 
         if group_df.empty:
             print(f"No data for group: {group_name}")
             continue
 
-        color = GROUP_COLORS.get(group_name, None)
+        color = group.color
+
+        stats_df, excluded_df, n_outliers = resolve_outliers(group_df, y_col)
+
+        if n_outliers > 0:
+            print(f"{group_name}: {n_outliers} outlier file(s) detected")
 
         if SHOW_INDIVIDUAL_TRACES:
-            plot_individual_traces(group_df, y_col, color)
+            plot_individual_traces(stats_df, y_col, color)
 
-        summary = summarize_group(group_df, y_col)
+        if PLOT_OUTLIERS and not excluded_df.empty:
+            plot_excluded_traces(excluded_df, y_col, group_name, color)
+
+        summary = summarize_group(stats_df, y_col)
 
         fit_result, fit_curve = fit_group_mean(
             summary=summary,
-            group_df=group_df,
+            group_df=stats_df,
             group_name=group_name,
             y_col=y_col,
+            n_outliers=n_outliers,
         )
 
         plot_group_mean_and_ci(
@@ -127,6 +138,26 @@ def plot_individual_traces(group_df, y_col, color):
             alpha=INDIVIDUAL_LINE_ALPHA,
             color=color,
             label="_nolegend_",
+        )
+
+
+def plot_excluded_traces(excluded_df, y_col, group_name, color):
+    """
+    Plot the full raw trace of each file excluded from the group mean/CI/fit
+    due to outlier frames (see CORRECT_OUTLIER / PLOT_OUTLIERS in config),
+    so the excluded data stays visible instead of silently disappearing.
+    """
+    for source_file, file_df in excluded_df.groupby(SOURCE_FILE_COL):
+        file_df = file_df.sort_values(TIME_COL)
+
+        plt.plot(
+            file_df[TIME_COL],
+            file_df[y_col],
+            linestyle=":",
+            linewidth=INDIVIDUAL_LINE_WIDTH,
+            alpha=0.7,
+            color=color,
+            label=f"{group_name} excluded: {source_file}",
         )
 
 
