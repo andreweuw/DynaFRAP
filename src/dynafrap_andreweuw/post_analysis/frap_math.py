@@ -8,38 +8,23 @@ from scipy.optimize import curve_fit
 from dynafrap_andreweuw.post_analysis.config import INITIAL_K, MAX_FIT_EVALUATIONS, MIN_K, TIME_COL
 
 
-def one_phase_recovery(t, I_inf, A, k):
+def one_phase_recovery(t, I_inf, k):
     """
-    One-phase exponential FRAP recovery model.
+    One-phase exponential FRAP recovery model, anchored to the known
+    normalization boundary condition I(0) = 0 (the immediate post-bleach
+    frame is always 0% by definition, so it is not fit as a free parameter).
 
     Model:
 
-        I(t) = I_inf - A * exp(-k * t)
+        I(t) = I_inf * (1 - exp(-k * t))
 
     where:
 
-        I_inf = fitted recovery plateau
-        A     = recovery amplitude
+        I_inf = fitted recovery plateau (also the recovery amplitude,
+                since I(0) = 0)
         k     = recovery rate constant
-
-    At t = 0:
-
-        I_0 = I_inf - A
-
-    Therefore:
-
-        A = I_inf - I_0
     """
-    return I_inf - A * np.exp(-k * t)
-
-
-def fitted_I_0(I_inf, A):
-    """
-    Fitted initial post-bleach intensity.
-
-        I_0 = I_inf - A
-    """
-    return I_inf - A
+    return I_inf * (1.0 - np.exp(-k * t))
 
 
 def recovery_half_time(k):
@@ -96,11 +81,10 @@ def initial_fit_parameters(y):
     """
     Generate initial guesses for one-phase recovery fitting.
     """
-    I_inf_0 = y[-1]
-    A_0 = max(I_inf_0 - y[0], 1e-6)
+    I_inf_0 = max(y[-1] - y[0], 1e-6)
     k_0 = INITIAL_K
 
-    return [I_inf_0, A_0, k_0]
+    return [I_inf_0, k_0]
 
 
 def fit_recovery_curve(time_values, intensity_values):
@@ -130,8 +114,8 @@ def fit_recovery_curve(time_values, intensity_values):
     p0 = initial_fit_parameters(y)
 
     bounds = (
-        [0, 0, MIN_K],
-        [np.inf, np.inf, np.inf],
+        [0, MIN_K],
+        [np.inf, np.inf],
     )
 
     try:
@@ -146,15 +130,16 @@ def fit_recovery_curve(time_values, intensity_values):
     except RuntimeError:
         return None, None
 
-    I_inf, A, k = popt
+    I_inf, k = popt
 
-    I_0 = fitted_I_0(I_inf, A)
+    I_0 = 0.0
+    A = I_inf
     t_half = recovery_half_time(k)
     absolute_t_half = t_start + t_half
     I_half = recovery_half_intensity(I_0, A)
 
     t_smooth = np.linspace(t_fit.min(), t_fit.max(), 300)
-    y_smooth = one_phase_recovery(t_smooth, I_inf, A, k)
+    y_smooth = one_phase_recovery(t_smooth, I_inf, k)
     x_smooth = t_smooth + t_start
 
     fit_params = {
