@@ -5,7 +5,7 @@ import numpy as np
 import pandas as pd
 from scipy.optimize import curve_fit
 
-from dynafrap_andreweuw.post_analysis.config import INITIAL_K, MAX_FIT_EVALUATIONS, MIN_K, TIME_COL
+from dynafrap_andreweuw.postprocessing.config import INITIAL_K, MAX_FIT_EVALUATIONS, MIN_K, TIME_COL
 
 
 def one_phase_recovery(t, I_inf, k):

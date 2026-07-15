@@ -9,7 +9,7 @@ from matplotlib.lines import Line2D
 from matplotlib.patches import Patch
 from matplotlib.ticker import MultipleLocator
 
-from dynafrap_andreweuw.post_analysis.config import (
+from dynafrap_andreweuw.postprocessing.config import (
     CI_MULTIPLIER,
     FIGSIZE,
     FIT_LINE_WIDTH,
@@ -28,7 +28,7 @@ from dynafrap_andreweuw.post_analysis.config import (
     X_LABEL,
     Y_LABEL,
 )
-from dynafrap_andreweuw.post_analysis.process import (
+from dynafrap_andreweuw.postprocessing.process import (
     fit_group_mean,
     get_y_col,
     resolve_outliers,

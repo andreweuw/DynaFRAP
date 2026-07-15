@@ -3,15 +3,15 @@ import re
 import pandas as pd
 
 from dynafrap_andreweuw.paths import INPUT_FOLDERS
-from dynafrap_andreweuw.post_analysis.config import (
+from dynafrap_andreweuw.postprocessing.config import (
     GROUP_COL,
     GROUPS,
     SAVE_FIT_RESULTS,
     SOURCE_FILE_COL,
     fit_results_csv,
 )
-from dynafrap_andreweuw.post_analysis.plot import plot_groups_combined
-from dynafrap_andreweuw.post_analysis.process import (
+from dynafrap_andreweuw.postprocessing.plot import plot_groups_combined
+from dynafrap_andreweuw.postprocessing.process import (
     correct_target,
     get_y_col,
 )

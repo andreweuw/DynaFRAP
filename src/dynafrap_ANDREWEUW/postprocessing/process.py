@@ -1,6 +1,6 @@
 import numpy as np
 
-from dynafrap_andreweuw.post_analysis.config import (
+from dynafrap_andreweuw.postprocessing.config import (
     CONTROL_BLEACH_FACTOR_COL,
     CONTROL_BLEACH_FACTOR_OUTLIER_THRESHOLD,
     CONTROL_COL,
@@ -15,7 +15,7 @@ from dynafrap_andreweuw.post_analysis.config import (
     TARGET_COL,
     TIME_COL,
 )
-from dynafrap_andreweuw.post_analysis.frap_math import (
+from dynafrap_andreweuw.postprocessing.frap_math import (
     fit_recovery_curve,
     mobile_fraction_from_fit,
 )

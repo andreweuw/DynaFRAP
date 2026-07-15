@@ -43,7 +43,7 @@ Issues = "https://github.com/andreweuw/DynaFRAP/issues"
 dynafrap-preprocess = "dynafrap_andreweuw.preprocessing.main:main"
 dynafrap-segment = "dynafrap_andreweuw.segmentation.main:main"
 dynafrap-measure = "dynafrap_andreweuw.measuring.main:main"
-dynafrap-postprocess = "dynafrap_andreweuw.post_analysis.main:main"
+dynafrap-postprocess = "dynafrap_andreweuw.postprocessing.main:main"
 
 
 [tool.ruff]
