@@ -5,6 +5,9 @@
 import numpy as np
 import pandas as pd
 from matplotlib import pyplot as plt
+from matplotlib.lines import Line2D
+from matplotlib.patches import Patch
+from matplotlib.ticker import MultipleLocator
 
 from dynafrap_andreweuw.post_analysis.config import (
     CI_MULTIPLIER,
@@ -65,6 +68,7 @@ def plot_groups_combined(all_results, y_col=None):
     plt.figure(figsize=FIGSIZE)
 
     fit_results = []
+    plotted_groups = []
 
     for group in GROUPS:
         group_name = group.name
@@ -75,6 +79,7 @@ def plot_groups_combined(all_results, y_col=None):
             continue
 
         color = group.color
+        plotted_groups.append((group_name, color))
 
         stats_df, excluded_df, n_outliers = resolve_outliers(group_df, y_col)
 
@@ -99,7 +104,6 @@ def plot_groups_combined(all_results, y_col=None):
 
         plot_group_mean_and_ci(
             summary=summary,
-            group_name=group_name,
             color=color,
         )
 
@@ -107,7 +111,6 @@ def plot_groups_combined(all_results, y_col=None):
             plot_fit_curve(
                 fit_curve=fit_curve,
                 fit_result=fit_result,
-                group_name=group_name,
                 color=color,
             )
 
@@ -117,7 +120,40 @@ def plot_groups_combined(all_results, y_col=None):
     plt.ylabel(Y_LABEL)
     plt.title(TITLE)
     plt.grid(True)
-    plt.legend()
+    plt.gca().xaxis.set_major_locator(MultipleLocator(1))
+
+    style_handles = [
+        Line2D([0], [0], color="black", marker="o", linewidth=MEAN_LINE_WIDTH, label="Mean"),
+    ]
+    if SHOW_CI:
+        style_handles.append(Patch(facecolor="black", alpha=0.15, label="95% CI (area)"))
+    style_handles.append(
+        Line2D(
+            [0],
+            [0],
+            color="black",
+            linestyle="--",
+            linewidth=FIT_LINE_WIDTH,
+            label=r"Fit: $I(t) = I_{\infty}\left(1 - e^{-kt}\right),\ I(0) = 0$",
+        )
+    )
+    if SHOW_HALFTIME_MARKER:
+        style_handles.append(
+            Line2D([0], [0], color="black", linestyle=":", linewidth=1.5, label=r"$t_{1/2}$")
+        )
+
+    group_handles = [
+        Line2D([0], [0], color=color, linewidth=MEAN_LINE_WIDTH, label=group_name)
+        for group_name, color in plotted_groups
+    ]
+
+    spacer = Line2D([0], [0], color="none", label="")
+    plt.legend(
+        handles=[*group_handles, spacer, *style_handles],
+        loc="upper left",
+        ncol=1,
+    )
+
     plt.tight_layout()
     plt.show()
 
@@ -161,7 +197,7 @@ def plot_excluded_traces(excluded_df, y_col, color):
         )
 
 
-def plot_group_mean_and_ci(summary, group_name, color):
+def plot_group_mean_and_ci(summary, color):
     """
     Plot group mean and confidence interval.
     """
@@ -174,9 +210,9 @@ def plot_group_mean_and_ci(summary, group_name, color):
             x,
             mean - ci,
             mean + ci,
-            alpha=0.15,
+            alpha=0.25,
             color=color,
-            label=f"{group_name} 95% CI",
+            label="_nolegend_",
         )
 
     plt.plot(
@@ -185,11 +221,11 @@ def plot_group_mean_and_ci(summary, group_name, color):
         marker="o",
         linewidth=MEAN_LINE_WIDTH,
         color=color,
-        label=f"{group_name} mean",
+        label="_nolegend_",
     )
 
 
-def plot_fit_curve(fit_curve, fit_result, group_name, color):
+def plot_fit_curve(fit_curve, fit_result, color):
     """
     Plot fitted exponential recovery curve and t_1/2 markers.
     """
@@ -199,7 +235,7 @@ def plot_fit_curve(fit_curve, fit_result, group_name, color):
         linestyle="--",
         linewidth=FIT_LINE_WIDTH,
         color=color,
-        label=f"{group_name} fit, t1/2={fit_result['t_half']:.2f}",
+        label="_nolegend_",
     )
 
     if SHOW_HALFTIME_MARKER:
@@ -208,7 +244,7 @@ def plot_fit_curve(fit_curve, fit_result, group_name, color):
             linestyle=":",
             linewidth=1.5,
             color=color,
-            label=f"{group_name} t1/2 at {fit_result['absolute_t_half']:.2f}",
+            label="_nolegend_",
         )
 
         plt.axhline(

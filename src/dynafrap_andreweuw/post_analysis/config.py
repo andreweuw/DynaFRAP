@@ -87,12 +87,12 @@ class Group:
 # number of groups; name/pattern/color are independent so the display name
 # can be descriptive without constraining the filename-matching regex.
 GROUPS = [
-    Group(name="Low-red", pattern=r"low-red", color="blue"),
-    Group(name="High-Red", pattern=r"high-red", color="red"),
-    Group(name="WL-guard", pattern=r"wl-guard", color="blue"),
-    Group(name="WL-pavement", pattern=r"wl-pavement", color="green"),
-    Group(name="WL-palisade", pattern=r"wl-palisade", color="magenta"),
-    Group(name="WL-spongy", pattern=r"wl-spongy", color="black"),
+    Group(name="Low-red", pattern=r"low-red", color="#0072B2"),
+    Group(name="High-Red", pattern=r"high-red", color="#D55E00"),
+    Group(name="WL-guard", pattern=r"wl-guard", color="#009E73"),
+    Group(name="WL-pavement", pattern=r"wl-pavement", color="#E69F00"),
+    Group(name="WL-palisade", pattern=r"wl-palisade", color="#CC79A7"),
+    Group(name="WL-spongy", pattern=r"wl-spongy", color="#56B4E9"),
 ]
 
 
