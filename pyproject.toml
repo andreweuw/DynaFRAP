@@ -27,8 +27,8 @@ dependencies = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/andreweuw/LiveCellTracker"
-Issues = "https://github.com/andreweuw/LiveCellTracker/issues"
+Homepage = "https://github.com/andreweuw/DynaFRAP"
+Issues = "https://github.com/andreweuw/DynaFRAP/issues"
 
 [project.scripts]
 dynafrap = "dynafrap_andreweuw.main:main"
