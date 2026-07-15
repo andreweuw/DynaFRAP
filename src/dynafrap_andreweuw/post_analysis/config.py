@@ -35,6 +35,8 @@ INPUT_FOLDER_NAMES = [
     # "pavement_lr_hr", # Combine these two to get joined groups under same regexes
     # "guard_dark_lr_hr",  # Combine these two to get joined groups under same regexes
     "wl",
+    # "palisade_old",
+    "palisade_redo",
 ]
 
 INPUT_FOLDERS = [GROUPS_FOLDER / name for name in INPUT_FOLDER_NAMES]
@@ -109,6 +111,12 @@ PREBLEACH_TIME = 0
 # recovery curve, so the curve starts at the immediate post-bleach frame.
 MIN_PLOT_TIME = 1
 
+# Maximum frame/time retained for postprocessing, plotting, and fitting.
+# Frames with TIME_COL > MAX_PLOT_TIME are dropped before any further
+# processing. Useful for quickly testing on a truncated recovery curve.
+# Set to None to keep all frames.
+MAX_PLOT_TIME = 20
+
 
 # -----------------------------------------------------------------------------
 # 4. Outlier handling
@@ -119,7 +127,7 @@ MIN_PLOT_TIME = 1
 #   target_corrected = target / control_bleach_factor
 # divides by a near-zero number and explodes to unreliable values.
 # Frames below this threshold are flagged as outliers.
-CONTROL_BLEACH_FACTOR_OUTLIER_THRESHOLD = 0.1
+CONTROL_BLEACH_FACTOR_OUTLIER_THRESHOLD = 0.0
 
 # If True, any file containing outlier frames is inpainted: its outlier
 # frames are replaced with the group's per-timepoint mean (computed from the

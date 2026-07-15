@@ -8,6 +8,7 @@ from dynafrap_andreweuw.post_analysis.config import (
     CORRECTED_TARGET_RECOVERY_PERCENT_COL,
     IS_OUTLIER_COL,
     I_PRE_COL,
+    MAX_PLOT_TIME,
     MIN_PLOT_TIME,
     PREBLEACH_TIME,
     SOURCE_FILE_COL,
@@ -131,7 +132,12 @@ def correct_target(df):
     df[I_PRE_COL] = I_pre
     df[CORRECTED_TARGET_RECOVERY_PERCENT_COL] = target_corrected_recovery_percent
 
-    return df[df[TIME_COL] >= MIN_PLOT_TIME].copy()
+    df = df[df[TIME_COL] >= MIN_PLOT_TIME]
+
+    if MAX_PLOT_TIME is not None:
+        df = df[df[TIME_COL] <= MAX_PLOT_TIME]
+
+    return df.copy()
 
 
 def resolve_outliers(group_df, y_col):

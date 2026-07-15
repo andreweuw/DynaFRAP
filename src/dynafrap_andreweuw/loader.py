@@ -150,10 +150,10 @@ def load_dual_3d_tiff_sequence(folder_logits, folder_images, pb1_max_frame=None)
     skipping = True
     for prefix, series in sorted(series_map.keys()):
         fnames = series_map[(prefix, series)]
-        if "_WL-Spongy - Spongy Mesophyll-FRAP 006_FRAP Pre Series41_Channel_1" in fnames[0]:
-            skipping = False
-        if skipping:
-            continue
+        # if "_WL-Spongy - Spongy Mesophyll-FRAP 006_FRAP Pre Series41_Channel_1" in fnames[0]:
+        #     skipping = False
+        # if skipping:
+        #     continue
         logits_vols, image_vols = [], []
 
         for f in fnames:
