@@ -1,12 +1,12 @@
 from pathlib import Path
 
-# Preprocessing
+# 1. Preprocessing
 # uv run dynafrap-preprocess
 
 INPUT_LIF = Path("data/lif/Guard-1.5hDark-5min-High-Red-Test.lif")
 OUTPUT_TIFF_DIRECTORY = Path("data/tif")
 
-# Segmentation
+# 2. Segmentation
 # uv run dynafrap-segment
 
 UNET_LOG_DIR = "data/checkpoints/log/20240314-211347-unet_default_fold0"
@@ -15,14 +15,14 @@ PRED_DIR_IN = "data/tif/Guard-1.5hDark-5min-High-Red-Test"
 # Prediction output directory:
 PRED_DIR_OUT_BASE = "data/segmentations/Guard-1.5hDark-5min-High-Red-Test"
 
-# Measuring
+# 3. Measuring
 # uv run dynafrap-measure
 
 SEGMENTATIONS_FOLDER = Path("data/segmentations")
 MEASUREMENTS_INPUT_FOLDER = Path("data/tif")
 MEASUREMENTS_OUTPUT_FOLDER = Path("data/measurements")
 
-# Postprocessing
+# 4. Postprocessing
 # uv run dynafrap-postprocess
 
 # Folder containing one subfolder per input dataset. Each subfolder holds
