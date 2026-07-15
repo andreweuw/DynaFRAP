@@ -14,34 +14,14 @@
 
 import re
 from dataclasses import dataclass
-from pathlib import Path
+
+from dynafrap_andreweuw.paths import INPUT_FOLDER_NAMES, OUTPUT_DIR
 
 # -----------------------------------------------------------------------------
 # 1. Which data to analyze
 # -----------------------------------------------------------------------------
 
-# Folder containing one subfolder per input dataset. Each subfolder holds
-# the per-sample measurement CSV files for that dataset.
-# Each CSV should contain at least:
-#   - time/frame column
-#   - target ROI intensity column
-#   - control ROI intensity column
-GROUPS_FOLDER = Path("data/output/measurements")
 
-# Names of the subfolders inside GROUPS_FOLDER to process. CSV files from
-# all of these folders are pooled together into a single combined run
-# (one plot, one fit results CSV).
-INPUT_FOLDER_NAMES = [
-    # "pavement_lr_hr", # Combine these two to get joined groups under same regexes
-    # "guard_dark_lr_hr",  # Combine these two to get joined groups under same regexes
-    "wl",
-    # "palisade_old",
-    "palisade_redo",
-]
-
-INPUT_FOLDERS = [GROUPS_FOLDER / name for name in INPUT_FOLDER_NAMES]
-
-OUTPUT_DIR = Path("data/output")
 
 # If True, save the fit results dataframe to fit_results_csv().
 SAVE_FIT_RESULTS = True

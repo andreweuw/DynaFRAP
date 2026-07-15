@@ -4,13 +4,15 @@ from math import nan
 
 import numpy as np
 
+from dynafrap_andreweuw.paths import MEASUREMENTS_INPUT_FOLDER
+
 from . import analysis
 from .primitives import add_cylinder
 
 
 def compute_averages_and_save_to_csv(viewer):
     s = viewer.filenames[0]
-    csv_file = f"{s[: s.find('_Time')]}.csv"
+    csv_file = MEASUREMENTS_INPUT_FOLDER / f"{s[: s.find('_Time')]}.csv"
     start_t = viewer.current_t
     t0 = viewer.current_t
     new_rows = []

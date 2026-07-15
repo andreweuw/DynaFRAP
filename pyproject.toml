@@ -10,7 +10,7 @@ authors = [
 ]
 description = "Dynamic FRAP semiautomatic analysis tool"
 readme = "README.md"
-requires-python = ">=3.11"
+requires-python = ">=3.11,<3.12"
 classifiers = [
     "Programming Language :: Python :: 3",
     "Operating System :: OS Independent",
@@ -18,12 +18,21 @@ classifiers = [
 license = "MIT"
 license-files = ["LICEN[CS]E*"]
 dependencies = [
+    "numpy",
     "pandas>=3.0.3",
-    "ruff>=0.15.17",
     "scikit-image>=0.25.2",
     "scikit-learn>=1.7.1",
     "tifffile>=2025.6.11",
     "vtk>=9.5.0",
+    "biom3d==0.0.44",
+    "torchio==0.20.5",
+    "torch",
+    "liffile>=2026.2.16",
+]
+
+[dependency-groups]
+dev = [
+    "ruff>=0.15.17",
 ]
 
 [project.urls]
@@ -31,7 +40,9 @@ Homepage = "https://github.com/andreweuw/DynaFRAP"
 Issues = "https://github.com/andreweuw/DynaFRAP/issues"
 
 [project.scripts]
-dynafrap = "dynafrap_andreweuw.main:main"
+dynafrap-preprocess = "dynafrap_andreweuw.preprocessing.main:main"
+dynafrap-segment = "dynafrap_andreweuw.segmentation.main:main"
+dynafrap-measure = "dynafrap_andreweuw.measuring.main:main"
 dynafrap-postprocess = "dynafrap_andreweuw.post_analysis.main:main"
 
 

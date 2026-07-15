@@ -2,7 +2,7 @@ import numpy as np
 import vtk
 from vtkmodules.util import numpy_support
 
-from dynafrap_andreweuw.process import detect_local_max
+from dynafrap_andreweuw.measuring.process import detect_local_max
 
 from . import analysis, interaction
 from .analysis import propagate_peak_bounds

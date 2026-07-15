@@ -2,10 +2,10 @@ import re
 
 import pandas as pd
 
+from dynafrap_andreweuw.paths import INPUT_FOLDERS
 from dynafrap_andreweuw.post_analysis.config import (
     GROUP_COL,
     GROUPS,
-    INPUT_FOLDERS,
     SAVE_FIT_RESULTS,
     SOURCE_FILE_COL,
     fit_results_csv,

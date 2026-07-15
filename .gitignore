@@ -1,9 +1,13 @@
-/res/
-/flat/
 /.venv/
 *.csv
 *.tif
 *.zip
+*svg
+
+data/**
+!data/**/
+!data/.gitkeep
+!data/**/.gitkeep
 
 # Python bytecode / cache
 __pycache__/

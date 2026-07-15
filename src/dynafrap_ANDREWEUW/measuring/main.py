@@ -1,10 +1,11 @@
 from pathlib import Path
 
-from dynafrap_andreweuw.interactive_viewer.voxel_viewer import VoxelViewer
-from dynafrap_andreweuw.loader import (
+from dynafrap_andreweuw.measuring.interactive_viewer.voxel_viewer import VoxelViewer
+from dynafrap_andreweuw.measuring.loader import (
     load_dual_3d_tiff_sequence,
 )
-from dynafrap_andreweuw.process import crop_all
+from dynafrap_andreweuw.measuring.process import crop_all
+from dynafrap_andreweuw.paths import MEASUREMENTS_INPUT_FOLDER, SEGMENTATIONS_FOLDER
 
 
 def process_all_from_folders(folder_path, gt_path, pb1_max_frame=None):
@@ -27,12 +28,10 @@ def process_all_from_folders(folder_path, gt_path, pb1_max_frame=None):
 
 
 def main():
-    images_dirs = Path("data/input/images")
-    segmentations_dirs = Path("data/input/segmentations")
     mapping = {}
-    for sample_segmentation_dir in segmentations_dirs.iterdir():
+    for sample_segmentation_dir in SEGMENTATIONS_FOLDER.iterdir():
         name = sample_segmentation_dir.name
-        flat_item = images_dirs / name
+        flat_item = MEASUREMENTS_INPUT_FOLDER / name
         mapping[str(sample_segmentation_dir)] = str(flat_item)
     for f, gt in mapping.items():
         print(f"processing {f} with {gt}")
