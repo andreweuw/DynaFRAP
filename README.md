@@ -60,6 +60,26 @@ cd <project-directory>
 uv sync
 ```
 
+### Updating
+
+To update to the latest version, pull the newest changes and re-sync dependencies:
+
+```bash
+cd <project-directory>
+git pull
+uv sync
+```
+
+If the environment becomes broken or inconsistent (e.g. after dependency conflicts or a corrupted install), remove the virtual environment and let `uv` recreate it from scratch:
+
+```bash
+cd <project-directory>
+rm -rf .venv
+uv sync
+```
+
+On Windows (PowerShell), use `Remove-Item -Recurse -Force .venv` instead of `rm -rf .venv`.
+
 ---
 
 ## Interactive FRAP Analysis
