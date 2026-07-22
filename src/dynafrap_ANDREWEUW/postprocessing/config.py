@@ -3,8 +3,8 @@
 # =============================================================================
 #
 # Quick start for a new experiment:
-#   1. Set INPUT_FOLDER_NAMES to the subfolder(s) inside GROUPS_FOLDER that
-#      hold your measurement CSVs.
+#   1. Set INPUT_FOLDERS (in paths.py) to the folder(s) that hold your
+#      measurement CSVs.
 #   2. Update GROUPS so each name/pattern/color matches one of your
 #      experimental conditions.
 #   3. Update the plot labels/title if needed.
@@ -15,7 +15,7 @@
 import re
 from dataclasses import dataclass
 
-from dynafrap_andreweuw.paths import INPUT_FOLDER_NAMES, OUTPUT_DIR
+from dynafrap_andreweuw.paths import INPUT_FOLDERS, OUTPUT_DIR
 
 # -----------------------------------------------------------------------------
 # 1. Which data to analyze
@@ -35,11 +35,11 @@ def fit_results_csv():
     """
     Output CSV path for the fitted FRAP parameters.
 
-    The filename encodes both the input folders (via INPUT_FOLDER_NAMES) and
+    The filename encodes both the input folders (via INPUT_FOLDERS) and
     the current group combination (via GROUPS) so different runs don't
     overwrite each other's results.
     """
-    folders_slug = "_".join(_slugify(name) for name in INPUT_FOLDER_NAMES)
+    folders_slug = "_".join(_slugify(folder.name) for folder in INPUT_FOLDERS)
     groups_slug = "_".join(_slugify(group.name) for group in GROUPS)
     return OUTPUT_DIR / f"fit_results_{folders_slug}_{groups_slug}.csv"
 

@@ -31,19 +31,12 @@ MEASUREMENTS_OUTPUT_FOLDER = Path("data/measurements")
 #   - time/frame column
 #   - target ROI intensity column
 #   - control ROI intensity column
-GROUPS_FOLDER = Path("data/measurements")
-
-# Names of the subfolders inside GROUPS_FOLDER to process. CSV files from
-# all of these folders are pooled together into a single combined run
-# (one plot, one fit results CSV).
-INPUT_FOLDER_NAMES = [
-    # "pavement_lr_hr", # Combine these two to get joined groups under same regexes
-    # "guard_dark_lr_hr",  # Combine these two to get joined groups under same regexes
-    "wl",
-    # "palisade_old",
-    "palisade_redo",
+# Full paths to the folders to process. CSV files from all of these folders
+# are pooled together into a single combined run (one plot, one fit results
+# CSV).
+INPUT_FOLDERS = [
+    Path("data/measurements/wl"),
+    Path("data/measurements/palisade_redo"),
 ]
-
-INPUT_FOLDERS = [GROUPS_FOLDER / name for name in INPUT_FOLDER_NAMES]
 
 OUTPUT_DIR = Path("data/fits")
