@@ -25,15 +25,14 @@ MEASUREMENTS_OUTPUT_FOLDER = Path("data/measurements")
 # 4. Postprocessing
 # uv run dynafrap-postprocess
 
-# Folder containing one subfolder per input dataset. Each subfolder holds
-# the per-sample measurement CSV files for that dataset.
+
+# Full paths to the folders to process. CSV files from all of these folders
+# are pooled together into a single combined run (one plot, one fit results
+# CSV). Each folder holds the per-sample measurement CSV files for that dataset.
 # Each CSV should contain at least:
 #   - time/frame column
 #   - target ROI intensity column
 #   - control ROI intensity column
-# Full paths to the folders to process. CSV files from all of these folders
-# are pooled together into a single combined run (one plot, one fit results
-# CSV).
 INPUT_FOLDERS = [
     Path("data/measurements/wl"),
     Path("data/measurements/palisade_redo"),
