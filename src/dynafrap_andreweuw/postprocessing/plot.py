@@ -25,6 +25,7 @@ from dynafrap_andreweuw.postprocessing.config import (
     SOURCE_FILE_COL,
     TIME_COL,
     TITLE,
+    X_AXIS_TICK_LIMIT,
     X_LABEL,
     Y_LABEL,
 )
@@ -120,7 +121,11 @@ def plot_groups_combined(all_results, y_col=None):
     plt.ylabel(Y_LABEL)
     plt.title(TITLE)
     plt.grid(True)
-    plt.gca().xaxis.set_major_locator(MultipleLocator(1))
+    # MultipleLocator(1) creates one tick per unit, which is unusable (and can
+    # hang/exhaust memory) when the x-range spans a very large number of units.
+    x_min, x_max = plt.gca().get_xlim()
+    if x_max - x_min <= X_AXIS_TICK_LIMIT:
+        plt.gca().xaxis.set_major_locator(MultipleLocator(1))
 
     style_handles = [
         Line2D([0], [0], color="black", marker="o", linewidth=MEAN_LINE_WIDTH, label="Mean"),

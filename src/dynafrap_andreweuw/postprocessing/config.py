@@ -258,6 +258,8 @@ MAX_FIT_EVALUATIONS = 10000
 # Matplotlib figure size in inches: (width, height).
 FIGSIZE = (10, 6)
 
+# Matplotlib maximum number of ticks so that the figure is sensible
+X_AXIS_TICK_LIMIT = 10000
 
 # -----------------------------------------------------------------------------
 # Individual trace styling
